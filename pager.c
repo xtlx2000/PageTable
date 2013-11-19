@@ -15,12 +15,11 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include "modules.h" //hey bud! I moved a bunch of the defines and extra functionality functions in here
+                     //I figured they might get pretty lengthy
 
-#define FIFO_num 0
-#define LRU_num 1
-#define MFU_num 2
+
 int v=0;
-
 int main ( int argc, char* argv[]) {
    FILE *fp;
    fp = NULL;
