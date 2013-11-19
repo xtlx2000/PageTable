@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include "modules.h" //hey bud! I moved a bunch of the defines and extra functionality functions in here
                      //I figured they might get pretty lengthy
+#include "modules.c"
 
 
 int v=0;
