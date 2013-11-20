@@ -16,30 +16,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-//#include "modules.h" //hey bud! I moved a bunch of the defines and
-                     //  extra functionality functions in here
-                     //I figured they might get pretty lengthy
-//#include "modules.c"
-
-#define BITS 32
-#define ADDRESSPACE 4294967296
-#define PAGESIZE 4096
-#define PTES ADDRESSPACE/PAGESIZE
-#define MAXTLB PTES/2
-#define MAXTIME 9999999
-
-FILE *fp; //input file pointer
-
-// global param variables and defaults
-int maxPages = 500;
-int maxTLB = 10;
-int MMtime = 2;
-int TLBtime = 1;
-int DISKtime = 5;
-int pageReplAlgo = 1;
-int pageTableType = 1;
-
-int v=0; // Verbosity
+#include "modules.c"
 
 void getParams( int argc, char* argv[]){
 
