@@ -2,23 +2,6 @@
 Small library of functions that help to modularize this program
 */
 
-//globals
-int frameReplacementAlg = 0;
-int TLB[CACHE_SIZE];
-
-//structs
-struct page{
-	int startAddress;
-	int endAddress;
-	int dirtyBit;
-};
-
-struct data{
-	int currentLine;
-	int currentAddress;
-	int currentOperation;
-} line;
-
 //used to init all global variables from parameters and malloc space for the data structures
 void initilization(void){
    printf("initing everything\n");

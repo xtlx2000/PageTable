@@ -7,11 +7,27 @@
 #define LRU_num 	1
 #define MFU_num 	2
 #define CACHE_SIZE	500 //TODO: pick this size
+#define BITS 32
+#define ADDRESSPACE 2^BITS
+#define PAGESIZE 4096
+#define PTES ADDRESSPACE/PAGESIZE
+
+//globals
+int frameReplacementAlg = 0;
+int TLB[CACHE_SIZE];
 
 //structs
 struct page{
-	int address;
+	int startAddress;
+	int endAddress;
+	int dirtyBit;
 };
+
+struct data{
+	int currentLine;
+	int currentAddress;
+	int currentOperation;
+} line;
 
 //used to init all global variables from parameters and malloc space for the data structures
 void initilization(void);
