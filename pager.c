@@ -83,9 +83,9 @@ int main ( int argc, char* argv[]) {
 
    }
    // main code goes here
-
-   fscanf(fp, "%d %c %x", &PID, &RW, &addr);
-   printf("%d %c %x\n", PID, RW, addr);
+   while ( fscanf(fp, "%d %c %x", &PID, &RW, &addr) != EOF ) {
+      printf("%d %c 0x%x\n", PID, RW, addr);
+   }
 
    // end main code
 
