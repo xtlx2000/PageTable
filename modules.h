@@ -8,6 +8,7 @@
 #define PTES ADDRESSPACE/PAGESIZE
 #define MAXTLB PTES/2
 #define MAXTIME 9999999
+#define MAXWSW 50
 
 FILE *fp; //input file pointer
 
@@ -19,8 +20,9 @@ int TLBtime = 1;
 int DISKtime = 5;
 int pageReplAlgo = 1;
 int pageTableType = 1;
+int WSW = 5;
 
-int v=0; // Verbosity
+int v = 0; // Verbosity
 
 struct frame{
 	int idx;				//index into the mainMemory array
