@@ -114,19 +114,29 @@ void getParams( int argc, char* argv[]){
                pageTableType = value;
                printf("Page Table type set to %d.\n", pageTableType);
             }
+         // Working Set Window specified
+         } else if (strncmp(argv[i],"WSW=",4)==0) {
+            int value;
+            value = atoi(argv[i]+4);
+            if ( value<1 || value>MAXWSW ) {
+               printf("usage: WSW={1-%d}\n", MAXWSW);
+            } else {
+               pageTableType = value;
+               printf("Working Set Window set to %d.\n", pageTableType);
+            }
          // incorrect flag
          } else {
                printf( "usage: %s -verbose || -v  ||\n" , argv[0]);
                printf("\t   -veryverbose || -vv ||\n");
                printf("\t      -showcmds || -s  ||\n");
-               printf("\tpages={number of pages available}\n");
-               printf("\tTLB={number of PTE's available to TLB}\n");
-               printf("\tMMtime={time needed to read/write a main memory page}\n");
-               printf("\tTLBtime={time needed to read/write a page table entry in the TLB}\n");
-               printf("\tDISKtime={time needed to read/write a page to/from disk}\n");
-               printf("\tPR={1=FIFO, 2=LRU, 3=MFU}\n");
-               printf("\tPT={1=Single level, 2=Directory, 3=Inverted}\n\n\n");
-
+               printf("\tpages = {number of pages available}\n");
+               printf("\tTLB = {number of PTE's available to TLB}\n");
+               printf("\tMMtime = {time needed to read/write a main memory page}\n");
+               printf("\tTLBtime = {time needed to read/write a page table entry in the TLB}\n");
+               printf("\tDISKtime = {time needed to read/write a page to/from disk}\n");
+               printf("\tPR = {1=FIFO, 2=LRU, 3=MFU}\n");
+               printf("\tPT = {1=Single level, 2=Directory, 3=Inverted}\n");
+               printf("\tWSW = {number of instructions in the working set window}\n\n");
          }
       }
    }
@@ -134,9 +144,7 @@ void getParams( int argc, char* argv[]){
 
 int main ( int argc, char* argv[]) {
 
-   
-
-   int PID; // to be placed by line struct
+   int PID; // to be replaced by line struct
    char RW;
    uint addr;
 
@@ -148,16 +156,15 @@ int main ( int argc, char* argv[]) {
          if (fp == NULL) {
             printf("Can't open default input file: trace.out");
          }
-
    }
+
    // main code goes here
+
    while ( fscanf(fp, "%d %c %x", &PID, &RW, &addr) != EOF ) {
       //printf("%d %c 0x%x\n", PID, RW, addr);
    }
 
    // end main code
 
-   if ( fp != NULL) { fclose(fp);printf("File closed.\n");}
-
- 
+   if ( fp != NULL) { fclose(fp);printf("File closed.\n\n");}
 }
