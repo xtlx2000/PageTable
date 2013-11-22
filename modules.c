@@ -8,6 +8,22 @@ Small library of functions that help to modularize this program
 //used to init all global variables from parameters and malloc space for the data structures
 void initialization(void){
    printf("initing everything\n");
+   program.runNumber = 1;
+
+   int idx;
+	for(idx = 0; idx<PTES; idx++){
+		struct frame thisFrame;
+		struct PTE thisPTE;
+
+		thisPTE.frameNum		= idx;
+		thisPTE.address 		= idx*4096;
+		thisPTE.dirtyBit		= 0;
+		thisPTE.referenceBit 	= 0;
+
+		thisFrame.empty			= 1;
+		thisPTE.frame 			= &thisFrame;
+		pageTable[idx] 			= thisPTE;
+	}
 }//initilization
 
 //execute the operation on the memory location; return 
@@ -15,39 +31,21 @@ void doOp(int operation, int location){
    printf("doing the %d operation on memory location 0x%X\n", operation, location);
 }//doOP
 
-//check to see if the requested page has already been translated in the near future
-int checkTLBEntry(int address){
-	printf("checking the TLB\n");
-	int idx = 0;
-	for(idx; idx<MAXTLB; idx++){
-		if(TLB[idx].virtualAddress = address)
-			return idx;
-	}
-   return 0; //indicates that it was not in the TLB
-}//checkTLB
-
-//if the TLB contains the memory translation, grab it and use it to create the physical address
-int grabTLBEntry(int idx){
-	printf("grabbing the TLB memory translation\n");
-	struct TLBEntry thisTLBEntry = TLB[idx];	
-	return thisTLBEntry.physicalAddress;
-}//grabTLBEntry
 
 //check to see if the page table entry is already in the page table
 int checkPageTable(struct PTE *thisPTE){
-	int idx;
-	if (idx = checkPageTableEntry(thisPTE)){ //if it wasn't, check if the PTE is at least in the page checkPageTable
+	int idx = checkPageTableEntry(thisPTE);
+	if (idx) //if it wasn't, check if the PTE is at least in the page checkPageTable
 		return idx;
-	}
 
 	return 0; //indicates it wasn't in the page table already need to grab from memory
 }//checkPageTable
 
-//translate the virtual address found in the page table to the physical address
-void translateAddress(struct PTE *thisPTE){
-   printf("translating address\n");
-	thisPTE->address = 1; //address goes here
-}//translateAddress
+//check to see if the actual page is in the TLB
+int checkPageTableEntry(struct PTE *thisPTE){
+   printf("Checking to see if the requested page table entry is in the page table\n");
+   return 0; //indicates the page table does not contain the page table entry
+}//checkPageTableEntry
 
 //check to see if the address we are looking for is valid
 int checkValidAddress(int address){	
@@ -72,11 +70,6 @@ int checkForFreeFrame(void){
 	}*/
 	return -1;  		//return -1 on fail
 }//checkForFreeFrame
-
-//given a certain idx,  grabs the frame at that location
-struct frame *grabFreeFrame(int idx){
-	return &mainMem[idx];
-}//grabFreeFrame
 
 //evict a frame based on a replacement algorithm set by one of the global variables
 int evict(void){
@@ -118,48 +111,67 @@ void addTime(int time){
 }//addTime
 
 //given an address, this function will find the page that is associated with that address
-struct PTE *grabPTE(int address){
-	//loop through the page table entries and  figure out if any of them are in the range of
-	//address
-	struct PTE *thisPTE;
-	printf("finding the page associated with this address\n");
-	return thisPTE;
+int grabPTE(int address, struct PTE *thisPTE){
+	int idx;
+	for(idx=0; idx<PTES; idx++){
+		if(idx*4096 > address){
+			thisPTE = &pageTable[idx];
+			return idx;
+		}
+	}
+	return 0; //indicates if the it could not find a page
 }//grabPage
 
-//update the gloabl struct line, so that it contains the next line's attributes
-void grabNextLine(){
-	printf("reading the next line (line %d) from the input file\n", program.runNumber);
-/*	line.currentLine = 
-	line.currentAddress = 
-	line.currentOperation = */
-}//grabNextLine
-
-//check to see if the actual page is in the TLB
-int checkPageTableEntry(struct PTE *thisPTE){
-   printf("Checking to see if the requested page table entry is in the page table\n");
-   return 0; //indicates the page table does not contain the page table entry
-}//checkPageTableEntry
-
 //check if the page is in the tlb, and handle anything that should happen if it is; if it isn't return 0
-int checkTLB(struct PTE *thisPTE, struct TLBEntry *thisTLB){
+int checkTLB(struct PTE *thisPTE){
 	int idx;
-	if(idx = checkTLBEntry(line.currentAddress) > -1){	//check if it was in the TLB
-		//1.)	index into the TLB data structure and grab the physical translation
-		thisTLB->physicalAddress = grabTLBEntry(idx);
+	printf("Checking the TLB\n");
 
-		//2.)	combine it with the offset to create the full address
-		translateAddress(thisPTE);
+	/*testing simpliest case*/
+	struct TLBEntry thisTLB;
+	thisTLB.virtualAddress = 50;
+	thisTLB.physicalAddress = 100;
+	TLB[10] = thisTLB;
 
-		//3.)	do operation on that address
-		doOp(line.currentOperation, thisTLB->physicalAddress);
+	idx = checkTLBEntry(thisPTE->address);
+	if(idx > -1){	//check if it was in the TLB
+		//1.)	do operation on that address
+		doOp(line.currentOperation, grabTLBEntry(idx));
 
-		//4.)	check if the page needs to be dirtied or not
+		//2.)	check if the page needs to be dirtied or not
 		if(line.currentOperation == 1)	//indicates a write
 			thisPTE->dirtyBit = 1;
+		
 		return 1;
 	} 
 	return 0; //indicates that it wasn't in the TLB; check the page table 	
 }//checkTLB
+
+//check to see if the requested page has already been translated in the near future
+int checkTLBEntry(int address){
+	printf("checking the TLB entry\n");
+	int idx;
+	for(idx= 0; idx<MAXTLB; idx++){
+		if(TLB[idx].virtualAddress == address) //found the address in the TLB, return the idx
+			return idx;
+	}
+   return -1; //indicates that it was not in the TLB
+}//checkTLB
+
+//if the TLB contains the memory translation, grab it and use it to create the physical address
+int grabTLBEntry(int idx){
+	printf("grabbing the TLB memory translation\n");
+	struct TLBEntry thisTLBEntry = TLB[idx];	
+	return thisTLBEntry.physicalAddress;
+}//grabTLBEntry
+
+//translate the virtual address found in the page table to the physical address
+void translateAddress(struct PTE *thisPTE){
+	//TODO: set the frame pointer on the PTE
+	//TODO: create new TLB to place in the cache
+   printf("translating address\n");
+	thisPTE->address = 1; //address goes here
+}//translateAddress
 
 
 //move the control flow back to the main loop and read the next line
@@ -170,11 +182,24 @@ int readNextLine(int redo){
 	//1.) TODO: update working sets goes here
 	//if there was a page fault before, 
 	//don't update to the next line, just read it again
-	if(redo)
-		grabNextLine();
+	int ret = fscanf(fp, "%d %c %x", &PID, &RW, &addr);
+/*	printf("Process ID: %d; Operation: %c; Address: 0x%x\n",PID, RW, addr);*/
+	if(!redo)
+		grabNextLine(PID, RW, addr);
 
-	return fscanf(fp, "%d %c %x", &PID, &RW, &addr);
+	return ret;
 }//nextLine
+
+//update the gloabl struct line, so that it contains the next line's attributes
+void grabNextLine(int PID, char RW, uint addr){
+	line.processId		= PID;
+	line.currentAddress = addr;
+	if(RW == 'W')
+		line.currentOperation = 1;
+
+	printf("line processId %d\n address %x\n operation %d\n", line.processId, line.currentAddress, line.currentOperation);
+	return;
+}//grabNextLine
 
 //gracefully alert there was a seg fault
 void segFault(void){
@@ -204,14 +229,13 @@ int pageFault(struct PTE *thisPTE){
 		//2.a) evict someone using the replacement algorithms; check if the page is dirty
 		idx = evict();
 	} 
-	thisFrame = grabFreeFrame(idx);
+	/*thisFrame = grabFreeFrame(idx);
 
 	//3.)	bring the page into the page table
-	updatePageTable(thisFrame, thisPTE);
+	updatePageTable(thisFrame, thisPTE);*/
 
 	//4.)	roll back to the previous line so that we can try it now the page has been loaded
 	printf("END PAGE FAULT, TRY AGAIN!\n");
-	readNextLine(0);	
 	return 1; //indicates to read the next line
 }//pageFault
 

@@ -7,7 +7,7 @@
 #define BITS 32
 #define ADDRESSPACE 4294967296
 #define PAGESIZE 4096
-#define PTES ADDRESSPACE/PAGESIZE
+#define PTES 10//ADDRESSPACE/PAGESIZE
 #define MAXTLB PTES/2
 #define MAXTIME 9999999
 #define MAXWSW 50
@@ -31,16 +31,15 @@ uint addr;
 int v = 0; // Verbosity
 
 struct frame{
-	int idx;				//index into the mainMemory array
-	int address;			//the frame address refers to the physical address
 	int empty;				//is the frame empty?
 };
 
 struct PTE{
-	int *frame;				//points to its associated frame
+	struct frame *frame;	//points to its associated frame
 	int address;			//the virtual address that goes with this page
 	int dirtyBit;			//is the frame dirty?
 	int referenceBit;		//has the frame been referenced?
+	int frameNum;			//index into the mainMemory array
 };
 
 struct TLBEntry{
@@ -50,7 +49,7 @@ struct TLBEntry{
 
 struct data{
 	int processId;			//id for the current process
-	int currentAddress;		//the address that belongs in that line
+	uint currentAddress;	//the address that belongs in that line
 	int currentOperation;	//the operation to perform on the currentAddress
 } line;
 
@@ -67,11 +66,11 @@ struct processWorkingSets{
 //globals
 int frameReplacementAlg = 0;
 struct TLBEntry TLB[MAXTLB];
-struct frame mainMem[PTES];
+struct PTE pageTable[PTES];
 
 void initialization(void);
 void doOp(int operation, int location);
-int checkTLB(struct PTE *thisPTE, struct TLBEntry *thisTLB);
+int checkTLB(struct PTE *thisPTE);
 int grabTLBEntry(int idx);
 int checkPageTable(struct PTE *thisPTE);
 int checkPageTableEntry(struct PTE *thisPTE);
@@ -88,3 +87,4 @@ int readNextLine(int redo);
 int pageFault(struct PTE *thisPTE);
 int checkTLBEntry(int address);
 void getParams( int argc, char* argv[]);
+void grabNextLine(int PID, char RW, uint addr);

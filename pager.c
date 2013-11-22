@@ -19,14 +19,16 @@
 #include "modules.c"
 
 int main ( int argc, char* argv[]) {
-   int redo = 0;
+   //used to tell our main loop if we have page faulted;
+   //if we have reread the line and do not go to the next line
+   int redo = 0;  
 
    getParams(argc, argv);
    initialization();
 
    //attempt to open the file
    if ( fp == NULL) {
-      fp = fopen("trace.out", "r");
+      fp = fopen("tmp.txt", "r");
          printf("Default file loaded: trace.out\n");
          if (fp == NULL) {
             printf("Can't open default input file: trace.out");
@@ -36,17 +38,20 @@ int main ( int argc, char* argv[]) {
    // main code goes here
    while (readNextLine(redo) != EOF) {
       redo = 0;
-      struct PTE *thisPTE = grabPTE(line.currentAddress);
-      struct TLBEntry *thisTLB;
-
-      //1) check if it was in the TLB
-      if(!checkTLB(thisPTE, thisTLB)){
-         //1.a) check if it was in the page table
-         if(!checkPageTable(thisPTE)){
-            pageFault(thisPTE);
-            redo = 1;
-         }//checkPageTabl
-      }//checkTLB
+      struct PTE *thisPTE;
+      if(grabPTE(line.currentAddress, thisPTE)){
+         //check if it was in the TLB
+         if(!checkTLB(thisPTE)){
+            //check if it was in the page table
+            if(!checkPageTable(thisPTE)){
+               //pageFault(thisPTE);
+               printf("a page fault\n");
+               redo = 1;
+            }//checkPageTabl
+         }//checkTLB*/
+      } else {
+         printf("ERROR: You should never see this...eveer");
+      }
    }//while
 
    //close the file
