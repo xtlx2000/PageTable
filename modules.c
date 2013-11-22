@@ -66,7 +66,7 @@ int checkDiskFound(int address){
 int checkForFreeFrame(void){
 	printf("checking if there is a free frame\n");
 	int idx;
-/*	for(idx=0; idx<ADDRESS_SPACE; idx++){
+/*	for(idx=0; idx<PTES; idx++){
 		if(mainMemory[idx]->empty == 1)
 			return idx;	//return the frame idx for the empty frame
 	}*/
@@ -191,8 +191,8 @@ void writeToDisk(struct PTE thisPTE){
 int pageFault(struct PTE *thisPTE){
 	printf("PAGE FAULT!\n");
 	
-/*	//1.)	first check if the address is not valid or is not on the disk
-	if(!checkValidAddress(thisPTE->physicalAddress) || !checkDiskFound(thisPTE->physicalAddress)){
+/*	//1.)	first check if the address is not valid 
+	if(!checkValidAddress(thisPTE->physicalAddress) ){
 		segFault();
 		return 1; //triggers the next read to go to the next line
 	}*/

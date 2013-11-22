@@ -2,6 +2,8 @@
 	Init all the functions so that we can use them whenever
 */
 
+#include <stdio.h>
+
 #define BITS 32
 #define ADDRESSPACE 4294967296
 #define PAGESIZE 4096
