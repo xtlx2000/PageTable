@@ -22,6 +22,10 @@ int pageReplAlgo = 1;
 int pageTableType = 1;
 int WSW = 5;
 
+int PID; // to be replaced by line struct
+char RW;
+uint addr;
+
 int v = 0; // Verbosity
 
 struct frame{
@@ -63,50 +67,22 @@ int frameReplacementAlg = 0;
 struct TLBEntry TLB[MAXTLB];
 struct frame mainMem[PTES];
 
-//used to init all global variables from parameters and malloc space for the data structures
-void initilization(void);
-
-//execute the operation on the memory location; return 
+void initialization(void);
 void doOp(int operation, int location);
-
-//check to see if the requested page has already been translated in the near future
-int checkTLB(int address);
-
-//if the TLB contains the memory translation, grab it and use it to create the physical address
+int checkTLB(struct PTE *thisPTE, struct TLBEntry *thisTLB);
 int grabTLBEntry(int idx);
-
-//check to see if the page table entry is already in the page table
 int checkPageTable(struct PTE *thisPTE);
-
-//translate the virtual address found in the page table to the physical address
+int checkPageTableEntry(struct PTE *thisPTE);
 void translateAddress(struct PTE *thisPTE);
-
-//check to see if the address we are looking for is valid
 int checkValidAddress(int address);
-
-//check to see if the requested data was found in disk
 int checkDiskFound(int address);
-
-//check to see if there is a free frame
 int checkForFreeFrame(void);
-
-//evict a frame based on a replacement algorithm set by one of the global variables
 int evict(void);
-
-//check to see if the page is dirty
 int checkDirtyPTE(struct PTE *thisPTE);
-
-//gracefully alert there was a seg fault
 void segFault(void);
-
-//bring the page into the page table for future use
 void updatePageTable(struct frame *thisFrame, struct PTE *thisPTE);
-
-//add time to the performance metric
 void addTime(int time);
-
-//move the control flow back to the main loop and read the next line
-void nextLine(void);
-
-//trigger the sequence of events that occur during a page fault
+int readNextLine(int redo);
 int pageFault(struct PTE *thisPTE);
+int checkTLBEntry(int address);
+void getParams( int argc, char* argv[]);

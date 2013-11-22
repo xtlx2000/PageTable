@@ -6,7 +6,7 @@ Small library of functions that help to modularize this program
 #include "modules.h"
 
 //used to init all global variables from parameters and malloc space for the data structures
-void initilization(void){
+void initialization(void){
    printf("initing everything\n");
 }//initilization
 
@@ -16,7 +16,7 @@ void doOp(int operation, int location){
 }//doOP
 
 //check to see if the requested page has already been translated in the near future
-int checkTLB(int address){
+int checkTLBEntry(int address){
 	printf("checking the TLB\n");
 	int idx = 0;
 	for(idx; idx<MAXTLB; idx++){
@@ -35,8 +35,12 @@ int grabTLBEntry(int idx){
 
 //check to see if the page table entry is already in the page table
 int checkPageTable(struct PTE *thisPTE){
-   printf("Checking to see if the requested page table entry is in the page table\n");
-   return -1; //indicates the page table does not contain the page table entry
+	int idx;
+	if (idx = checkPageTableEntry(thisPTE)){ //if it wasn't, check if the PTE is at least in the page checkPageTable
+		return idx;
+	}
+
+	return 0; //indicates it wasn't in the page table already need to grab from memory
 }//checkPageTable
 
 //translate the virtual address found in the page table to the physical address
@@ -130,22 +134,16 @@ void grabNextLine(){
 	line.currentOperation = */
 }//grabNextLine
 
-//move the control flow back to the main loop and read the next line
-//redo is used to control page faults when the come back to this step
-	//0 - page fault (read same line)
-	//1 - read next line
-void readNextLine(int redo){
-	int idx;
-	
-	//if there was a page fault before, 
-	//don't update to the next line, just read it again
-	if(redo)
-		grabNextLine();
+//check to see if the actual page is in the TLB
+int checkPageTableEntry(struct PTE *thisPTE){
+   printf("Checking to see if the requested page table entry is in the page table\n");
+   return 0; //indicates the page table does not contain the page table entry
+}//checkPageTableEntry
 
-	struct PTE *thisPTE = grabPTE(line.currentAddress);
-	struct TLBEntry *thisTLB;
-	
-	if(idx = checkTLB(1/*line.currentAddress*/) > -1){	//check if it was in the TLB
+//check if the page is in the tlb, and handle anything that should happen if it is; if it isn't return 0
+int checkTLB(struct PTE *thisPTE, struct TLBEntry *thisTLB){
+	int idx;
+	if(idx = checkTLBEntry(line.currentAddress) > -1){	//check if it was in the TLB
 		//1.)	index into the TLB data structure and grab the physical translation
 		thisTLB->physicalAddress = grabTLBEntry(idx);
 
@@ -158,12 +156,24 @@ void readNextLine(int redo){
 		//4.)	check if the page needs to be dirtied or not
 		if(line.currentOperation == 1)	//indicates a write
 			thisPTE->dirtyBit = 1;
+		return 1;
+	} 
+	return 0; //indicates that it wasn't in the TLB; check the page table 	
+}//checkTLB
 
-	} else if (idx = checkPageTable(thisPTE) > -1){ //if it wasn't, check if the PTE is at least in the page table 
-		
-	} else {										//if neither of these, then page fault
-		pageFault(thisPTE);
-	}
+
+//move the control flow back to the main loop and read the next line
+//redo is used to control page faults when the come back to this step
+	//0 - page fault (read same line)
+	//1 - read next line
+int readNextLine(int redo){
+	//1.) TODO: update working sets goes here
+	//if there was a page fault before, 
+	//don't update to the next line, just read it again
+	if(redo)
+		grabNextLine();
+
+	return fscanf(fp, "%d %c %x", &PID, &RW, &addr);
 }//nextLine
 
 //gracefully alert there was a seg fault
@@ -204,3 +214,127 @@ int pageFault(struct PTE *thisPTE){
 	readNextLine(0);	
 	return 1; //indicates to read the next line
 }//pageFault
+
+void getParams( int argc, char* argv[]){
+
+   if ( argc >= 2 ) { // flags or params are set
+      int i;
+      for (i=1 ; i<argc ; i++) {
+         // User specified file 
+         if (strncmp(argv[i],"file=", 5)==0 ) {
+            fp = fopen(argv[i]+5, "r");
+            if (fp == NULL) {
+               printf("Can't open input file: %s\n", argv[i]+5);
+               printf("Loading default file. \n");
+            }
+            else {
+               printf("File option engaged: %s\n", argv[i]+5);
+            }
+         // Verbose option 
+         } else if (strcmp(argv[i],"-verbose")==0 || strcmp(argv[i],"-v")==0) {
+            printf("Verbose option engaged.\n");
+            v = 1;
+         // Very verbose option 
+         } else if (strcmp(argv[i],"-veryverbose")==0 || strcmp(argv[i],"-vv")==0) {
+            printf("Very Verbose option engaged.\n");
+            v = 2;
+         // Number of pages specified
+         } else if (strncmp(argv[i],"Pages=", 6)==0 ) {
+            int value;
+            value = atoi(argv[i]+6);
+            if ( value<1 || value>PTES ) {
+               printf("usage: Pages={1-%d}\n", (int)PTES);
+            } else {
+               maxPages = value;
+               printf("Number of pages set to %d.\n", maxPages);
+            }
+         // Max Number of TLB page table entries specified
+         } else if (strncmp(argv[i],"TLB=", 4)==0 ) {
+            int value;
+            value = atoi(argv[i]+4);
+            if ( value<1 || value>MAXTLB ) {
+               printf("usage: TLB={1-%d}\n", (int)MAXTLB);
+            } else {
+               maxTLB = value; 
+               printf("Max number of TLB entries set to %d.\n", maxTLB);
+            }
+         // time needed to read and write main memory specified
+         } else if (strncmp(argv[i],"MMtime=", 7)==0 ) {
+            int value;
+            value = atoi(argv[i]+7);
+            if ( value<1 || value>MAXTIME ) {
+               printf("usage: MMtime={1-%d} (nsec)\n", MAXTIME);
+            } else {
+               MMtime = value;
+               printf("Time needed to read/write a main memory");
+               printf("page set to %d (nsec).\n", value);
+            }
+            // time needed to read/write a page table entry in the TLB specified 
+         } else if (strncmp(argv[i],"TLBtime=", 8)==0 ) {
+            int value;
+            value = atoi(argv[i]+8);
+            if ( value<1 || value>MAXTIME ) {
+               printf("usage: TLBtime={1-%d} (nsec)\n", MAXTIME);
+            } else {
+               TLBtime = value;
+               printf("Time needed to read/write a page table entry");
+               printf(" in the TLB set to %d (nsec).\n", TLBtime);
+            }
+            // time needed to read/write a page to/from disk specified
+         } else if (strncmp(argv[i],"DISKtime=", 9)==0 ) {
+            int value;
+            value = atoi(argv[i]+9);
+            if ( value<1 || value>MAXTIME ) {
+               printf("usage: DISKtime={1-%d} (nsec)\n", MAXTIME);
+            } else {
+               DISKtime = value;
+               printf("Time needed to read/write a page to/from disk");
+               printf(" set to %d (nsec).\n", DISKtime);
+            }
+         // Page replacement algorithm specified
+         } else if (strncmp(argv[i],"PR=",3)==0) {
+            int value;
+            value = atoi(argv[i]+3);
+            if ( value<1 || value>3 ) {
+               printf("usage: PageRep={1=FIFO, 2=LRU, 3=MFU}\n");
+            } else {
+               pageReplAlgo = value;
+               printf("Page Replacement set to %d.\n", pageReplAlgo);
+            }
+         // Page table type specified
+         } else if (strncmp(argv[i],"PT=",3)==0) {
+            int value;
+            value = atoi(argv[i]+3);
+            if ( value<1 || value>3 ) {
+               printf("usage: PT={1=Single level, 2=Directory, 3=Inverted}\n");
+            } else {
+               pageTableType = value;
+               printf("Page Table type set to %d.\n", pageTableType);
+            }
+         // Working Set Window specified
+         } else if (strncmp(argv[i],"WSW=",4)==0) {
+            int value;
+            value = atoi(argv[i]+4);
+            if ( value<1 || value>MAXWSW ) {
+               printf("usage: WSW={1-%d}\n", MAXWSW);
+            } else {
+               pageTableType = value;
+               printf("Working Set Window set to %d.\n", pageTableType);
+            }
+         // incorrect flag
+         } else {
+               printf( "usage: %s -verbose || -v  ||\n" , argv[0]);
+               printf("\t   -veryverbose || -vv ||\n");
+               printf("\t      -showcmds || -s  ||\n");
+               printf("\tpages = {number of pages available}\n");
+               printf("\tTLB = {number of PTE's available to TLB}\n");
+               printf("\tMMtime = {time needed to read/write a main memory page}\n");
+               printf("\tTLBtime = {time needed to read/write a page table entry in the TLB}\n");
+               printf("\tDISKtime = {time needed to read/write a page to/from disk}\n");
+               printf("\tPR = {1=FIFO, 2=LRU, 3=MFU}\n");
+               printf("\tPT = {1=Single level, 2=Directory, 3=Inverted}\n");
+               printf("\tWSW = {number of instructions in the working set window}\n\n");
+         }
+      }
+   }
+}
