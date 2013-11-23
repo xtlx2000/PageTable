@@ -28,7 +28,7 @@ int main ( int argc, char* argv[]) {
 
    //attempt to open the file
    if ( fp == NULL) {
-      fp = fopen("tmp.txt", "r");
+      fp = fopen("tmp2.txt", "r");
          printf("Default file loaded: trace.out\n");
          if (fp == NULL) {
             printf("Can't open default input file: trace.out");
@@ -38,21 +38,24 @@ int main ( int argc, char* argv[]) {
    // main code goes here
    while (readNextLine(redo) != EOF) {
       redo = 0;
-      struct PTE *thisPTE;
-      if(grabPTE(line.currentAddress, thisPTE)){
+      int pageRequested = grabPTE(line.currentAddress);
+      if(pageRequested != -1){
          //check if it was in the TLB
-         if(!checkTLB(thisPTE)){
+         if(!checkTLB(pageRequested)){
             //check if it was in the page table
-            if(!checkPageTable(thisPTE)){
-               //pageFault(thisPTE);
-               printf("a page fault\n");
+            if(!checkPageTable(pageRequested)){
+               pageFault(pageRequested);
                redo = 1;
             }//checkPageTabl
          }//checkTLB*/
       } else {
-         printf("ERROR: You should never see this...eveer");
+         printf("ERROR: You are bad at this.\n");
+         segFault();
       }
+      calcAverage();
    }//while
+
+   printf("%s %f\n", "Average Access Time: ", program.runningAverage);
 
    //close the file
    if ( fp != NULL) { fclose(fp);printf("File closed.\n\n");}

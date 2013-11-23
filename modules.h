@@ -7,7 +7,7 @@
 #define BITS 32
 #define ADDRESSPACE 4294967296
 #define PAGESIZE 4096
-#define PTES 10//ADDRESSPACE/PAGESIZE
+#define PTES ADDRESSPACE/PAGESIZE
 #define MAXTLB PTES/2
 #define MAXTIME 9999999
 #define MAXWSW 50
@@ -16,13 +16,15 @@ FILE *fp; //input file pointer
 
 // global param variables and defaults
 int maxPages = 500;
-int maxTLB = 10;
+int TLBEntries = 10;
 int MMtime = 2;
 int TLBtime = 1;
-int DISKtime = 5;
+int DISKtime = 1000;
 int pageReplAlgo = 1;
 int pageTableType = 1;
 int WSW = 5;
+
+int FIFOindex = 0;
 
 int PID; // to be replaced by line struct
 char RW;
@@ -31,20 +33,16 @@ uint addr;
 int v = 0; // Verbosity
 
 struct frame{
-	int empty;				//is the frame empty?
-};
-
-struct PTE{
-	struct frame *frame;	//points to its associated frame
-	int address;			//the virtual address that goes with this page
+	int vAddress;			//the virtual address that goes with this page
+	int pAddress;			//the physical address that goes with this page
 	int dirtyBit;			//is the frame dirty?
 	int referenceBit;		//has the frame been referenced?
-	int frameNum;			//index into the mainMemory array
 };
 
 struct TLBEntry{
-	int virtualAddress;		//used to find if the address from the line is in the TLB
-	int physicalAddress;	//the translated virtual address
+	int vAddress;		//used to find if the address from the line is in the TLB
+	int pAddress;	//the translated virtual address
+	int frameNum;	// page table index of this page
 };
 
 struct data{
@@ -55,6 +53,7 @@ struct data{
 
 struct perforamance{
 	double runningAverage;	//keep a running average of the total access time for each instruction
+	int currentRunningSum; //accumulated time for the current run 
 	int runNumber;			//the number of lines that you have read
 } program;
 
@@ -66,25 +65,27 @@ struct processWorkingSets{
 //globals
 int frameReplacementAlg = 0;
 struct TLBEntry TLB[MAXTLB];
-struct PTE pageTable[PTES];
+struct frame pageTable[PTES];
 
 void initialization(void);
-void doOp(int operation, int location);
-int checkTLB(struct PTE *thisPTE);
+void doOp(int operation, int location, int time);
+int checkTLB(int pageRequested);
 int grabTLBEntry(int idx);
-int checkPageTable(struct PTE *thisPTE);
-int checkPageTableEntry(struct PTE *thisPTE);
-void translateAddress(struct PTE *thisPTE);
+int grabPTE(int address);
+int checkPageTable(int pageRequested);
+int checkPageTableEntry(int pageRequested);
+//void translateAddress(struct PTE *thisPTE);
+void writeToDisk(struct frame evictedFrame);
 int checkValidAddress(int address);
 int checkDiskFound(int address);
 int checkForFreeFrame(void);
 int evict(void);
-int checkDirtyPTE(struct PTE *thisPTE);
+int checkDirtyPTE(struct frame *thisFrame);
 void segFault(void);
-void updatePageTable(struct frame *thisFrame, struct PTE *thisPTE);
+void updatePageTable(struct frame *thisFrame, int pageRequested);
 void addTime(int time);
 int readNextLine(int redo);
-int pageFault(struct PTE *thisPTE);
+int pageFault(int pageRequested);
 int checkTLBEntry(int address);
 void getParams( int argc, char* argv[]);
 void grabNextLine(int PID, char RW, uint addr);
