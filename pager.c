@@ -37,25 +37,48 @@ int main ( int argc, char* argv[]) {
 
    // main code goes here
    while (readNextLine(redo) != EOF) {
+      puts("\n**************************");
+      if(redo)
+         printf("READING LINE %d AGAIN \n", program.runNumber);
+      else 
+         printf("READING LINE %d\n", program.runNumber);
+
       redo = 0;
       int pageRequested = grabPTE(line.currentAddress);
       if(pageRequested != -1){
          //check if it was in the TLB
-         if(!checkTLB(pageRequested)){
+         int TLBCheck = checkTLB(pageRequested);
+         if(!TLBCheck){
             //check if it was in the page table
-            if(!checkPageTable(pageRequested)){
+            int pageTableCheck = checkPageTable(pageRequested);
+            if(pageTableCheck == -1){
+               puts("PAGE FAULT");
+               printf("Addding %d ns for a disk hit\n", DISKtime);
                pageFault(pageRequested);
                redo = 1;
-            }//checkPageTabl
-         }//checkTLB*/
+            } else {//checkPageTabl
+               puts("FOUND IT IN THE PAGE TABLE");
+               printf("Adding %d ns for a memory hit\n", MMtime);
+            }
+         } else {//checkTLB*/
+            puts("FOUND IT IN THE CACHE");
+            printf("Adding %d ns for a cache hit\n", TLBtime);
+         }
+
       } else {
-         printf("ERROR: You are bad at this.\n");
+         printf("ERROR: SEG FAULT\n");
          segFault();
       }
       calcAverage();
+      printf("%s %f %s\n", "Running average: ", program.runningAverage, "ns");
+      printf("%s %d %s\n\n", "Running total: ", program.currentRunningSum, "ns");
+      visual();
+      puts("**************************");
    }//while
 
-   printf("%s %f\n", "Average Access Time: ", program.runningAverage);
+
+   printf("\n%s %f %s\n", "Average Access Time: ", program.runningAverage, "ns");
+   printf("%s %d %s\n", "Total Access Time: ", program.currentRunningSum, "ns");
 
    //close the file
    if ( fp != NULL) { fclose(fp);printf("File closed.\n\n");}

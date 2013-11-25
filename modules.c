@@ -7,8 +7,7 @@ Small library of functions that help to modularize this program
 
 //used to init all global variables from parameters and malloc space for the data structures
 void initialization(void){
-   printf("initing everything\n");
-   program.runNumber = 1;
+   program.runNumber = 0;
 
    
    //init our empty page table
@@ -31,44 +30,110 @@ void initialization(void){
       thisTLB.vAddress = -1;
       thisTLB.pAddress = -1;
       thisTLB.frameNum = -1;
-
+      thisTLB.dirtyBit =  0;
       TLB[idx] = thisTLB;
    }
 }//initilization
 
 //execute the operation on the memory location; return 
-void doOp(int operation, int location, int time){
-   printf("doing the %d operation on memory location 0x%X\n", operation, location);
+void doOp(int operation, int pAddress, int time, int vAddress){
+   if(vAddress > -1)
+      updateCache(pAddress, vAddress);
+
    program.currentRunningSum += time;
 }//doOP
 
 
+//used to update the cache whenever there is a do op performed
+void updateCache(int pAddress, int vAddress){
+   //1.  check if there is a free frame
+   int idx = checkForFreeTLB();
+   if(idx < 0){
+      //1.a) evict someone using the replacement algorithms; check if the page is dirty
+      idx = evictTLB();
+   } 
+
+   //2.) bring the new info into the cache location
+   updateCacheTable(&TLB[idx], pAddress, vAddress, idx);
+}//updateCache
+
+int checkForFreeTLB(){
+   int idx;
+   for(idx=0; idx<TLBEntries; idx++){
+      if(TLB[idx].vAddress == -1)
+         return idx; //return the frame idx for the empty frame         
+   }
+   return -1;        //return -1 on fail
+}//checkForFreeTLB
+
+//chooses one of the TLB entries to evict
+int evictTLB(void){
+   int retVal;
+   struct TLBEntry evictedTLBEntry;
+   switch(pageReplAlgo){
+      case 0: //FIFO
+         //printf("evicting a frame base on the LRU algorithm");
+         evictedTLBEntry = TLB[FIFOindex_cache];
+         retVal = FIFOindex_cache;
+         break;
+      case 1: // LRU
+         //printf("evicting a frame base on the FIFO algorithm");
+         //check for dirty and reference bit
+         break;
+      case 2: // MFU
+         //printf("evicting a frame base on the MFU algorithm");
+         break;
+      default:
+         retVal = -1;
+   }
+
+   if(evictedTLBEntry.dirtyBit){
+      struct frame thisFrame;
+      thisFrame.vAddress = evictedTLBEntry.vAddress;
+      thisFrame.pAddress = evictedTLBEntry.pAddress;
+      writeToDisk(thisFrame);
+   }
+   
+   //return idx to evicted frame
+   return retVal;
+}//evictTLB
+
+//move the new information to the cache
+void updateCacheTable(struct TLBEntry *thisTLB, int pAddress, int vAddress, int frameNum){
+   thisTLB->pAddress = pAddress;
+   thisTLB->vAddress = vAddress;
+   thisTLB->frameNum = frameNum;
+   if (cacheReplAlgo = 0)
+      FIFOindex_cache = PTES - (FIFOindex_cache + 1 % PTES);
+}//updateCacheTable
+
+
 // calculate the running average at the end of each loop
 void calcAverage( void ) {
-   program.runningAverage = program.currentRunningSum/program.runNumber;
-   program.runNumber++;
+   program.runningAverage = (float)program.currentRunningSum/(float)program.runNumber;
 }
 
 //check to see if the page table entry is already in the page table
 int checkPageTable(int pageRequested){
 	int idx = checkPageTableEntry(pageRequested);
-   printf("idx %d\n",idx);
+   //printf("check page table: %d\n", idx);
 	if (idx > -1) {//if it wasn't, check if the PTE is at least in the page checkPageTable
-      doOp(line.currentOperation, pageTable[idx].pAddress, MMtime);
+      doOp(line.currentOperation, pageTable[idx].pAddress, MMtime, pageTable[idx].vAddress);
 
       //2.) check if the page needs to be dirtied or not
       if(line.currentOperation == 1)   //indicates a write
          pageTable[idx].dirtyBit = 1;
+
 		return idx;
    }
-	return 0; //indicates it wasn't in the page table already need to grab from memory
+	return -1; //indicates it wasn't in the page table already need to grab from memory
 }//checkPageTable
 
 //check to see if the actual page is in the TLB
 int checkPageTableEntry(int pageRequested){
-   printf("Checking to see if the requested page table entry is in the page table\n");
+   //printf("Checking to see if the requested page table entry is in the page table\n");
    int i;
-   printf("if(%X == %X)\n", pageTable[0].vAddress, pageRequested);
+   //printf("if(%X == %X)\n", pageTable[0].vAddress, pageRequested);
    for ( i=0; i<PTES; i++ ) {
       if (pageTable[i].vAddress == pageRequested)
          return i;
@@ -78,7 +143,7 @@ int checkPageTableEntry(int pageRequested){
 
 //check to see if the address we are looking for is valid
 int checkValidAddress(int address){	
-	printf("checking to see if 0x%X is a valid address\n", address);
+	//printf("checking to see if 0x%X is a valid address\n", address);
    if (address >= 0 || address <= ADDRESSPACE)
       return 1; //indicates a valid address
    return 0;
@@ -86,18 +151,18 @@ int checkValidAddress(int address){
 
 //check to see if the requested data was found in disk
 int checkDiskFound(int address){
-	printf("checking to see if the address is in disk", address);
+	//printf("checking to see if the address is in disk", address);
 	return 1; //indicates a valid address
 }//checkDiskFound
 
 //check to see if there is a free frame; 
 //loop through all the frames in main memory until you find one that has the property of empty
 int checkForFreeFrame(void){
-	printf("checking if there is a free frame\n");
+	//printf("checking if there is a free frame\n");
 	int idx;
 	for(idx=0; idx<PTES; idx++){
 		if(pageTable[idx].vAddress == -1){
-         printf("THERE WAS A FREE FRAME @ %d\n", idx);
+         //printf("THERE WAS A FREE FRAME @ %d\n", idx);
          return idx; //return the frame idx for the empty frame
       }
 			
@@ -107,28 +172,31 @@ int checkForFreeFrame(void){
 
 //evict a frame based on a replacement algorithm set by one of the global variables
 int evict(void){
-	printf("evicting a frame to make room for someone else\n");
+	//printf("evicting a frame to make room for someone else\n");
    int retVal;
    struct frame evictedFrame;
    switch(pageReplAlgo){
 		case 0: //FIFO
-			printf("evicting a frame base on the LRU algorithm");
-			evictedFrame = pageTable[FIFOindex];
-         retVal = FIFOindex;
+			//printf("evicting a frame base on the LRU algorithm");
+			evictedFrame = pageTable[FIFOindex_page];
+         retVal = FIFOindex_page;
 			break;
 		case 1: // LRU
-			printf("evicting a frame base on the FIFO algorithm");
+			//printf("evicting a frame base on the FIFO algorithm");
          //check for dirty and reference bit
 			break;
 		case 2: // MFU
-			printf("evicting a frame base on the MFU algorithm");
+			//printf("evicting a frame base on the MFU algorithm");
 			break;
       default:
          retVal = -1;
 	}
 
-	if(evictedFrame.dirtyBit)
+	if(evictedFrame.dirtyBit){
+      puts("DIRTY BIT");
+      printf("Adding %d ns for a disk hit", DISKtime);
 		writeToDisk(evictedFrame);
+   }
 
 		//return idx to evicted frame
 	return retVal;
@@ -136,25 +204,9 @@ int evict(void){
 
 //check to see if the frame is dirty
 int checkDirtyPTE(struct frame *thisFrame){
-	printf("checking if the page is dirty\n");
+	//printf("checking if the page is dirty\n");
 	return thisFrame->dirtyBit;
 }//checkDirtyPTE
-
-//bring the page into the page table for future use
-void updatePageTable(struct frame *thisFrame, int pageRequested){
-   printf("This is the frame we want to update %d\n", thisFrame->pAddress);
-   thisFrame->vAddress = pageRequested;
-   thisFrame->dirtyBit = 0;
-   thisFrame->referenceBit= 0;
-   if (pageReplAlgo = 0)
-      FIFOindex = PTES - (FIFOindex + 1 % PTES);
-	printf("bringing the page into the page table\n");
-}//updatePageTable
-
-//add time to the performance metric
-void addTime(int time){
-	printf("adding %d time to the total time\n", time);
-}//addTime
 
 //given an address, this function will find the page that is associated with that address
 int grabPTE(int address){
@@ -170,7 +222,7 @@ int grabPTE(int address){
 //check if the page is in the tlb, and handle anything that should happen if it is; if it isn't return 0
 int checkTLB(int pageRequested){
 	int idx;
-	printf("Checking the TLB\n");
+	//printf("Checking the TLB\n");
 
 	/*testing simpliest case*/
 	/*struct TLBEntry thisTLB;
@@ -181,7 +233,7 @@ int checkTLB(int pageRequested){
 	idx = checkTLBEntry(pageRequested);
 	if(idx > -1){	//check if it was in the TLB
 		//1.)	do operation on that address
-		doOp(line.currentOperation, grabTLBEntry(idx), TLBtime);
+		doOp(line.currentOperation, grabTLBEntry(idx), TLBtime, -1); //no need to update the cache, because its already there
 
 		//2.)	check if the page needs to be dirtied or not
 		if(line.currentOperation == 1)	//indicates a write
@@ -194,7 +246,7 @@ int checkTLB(int pageRequested){
 
 //check to see if the requested page has already been translated in the near future
 int checkTLBEntry(int address){
-	printf("checking the TLB entry\n");
+	//printf("checking the TLB entry\n");
 	int idx;
 	for(idx= 0; idx<TLBEntries; idx++){
 		if(TLB[idx].vAddress == address) //found the address in the TLB, return the idx
@@ -205,59 +257,56 @@ int checkTLBEntry(int address){
 
 //if the TLB contains the memory translation, grab it and use it to create the physical address
 int grabTLBEntry(int idx){
-	printf("grabbing the TLB memory translation\n");
+	//printf("grabbing the TLB memory translation\n");
 	struct TLBEntry thisTLBEntry = TLB[idx];	
 	return thisTLBEntry.pAddress;
 }//grabTLBEntry
-
-//translate the virtual address found in the page table to the physical address
-/*void translateAddress(struct PTE *thisPTE){
-	//TODO: set the frame pointer on the PTE
-	//TODO: create new TLB to place in the cache
-   printf("translating address\n");
-	thisPTE->address = 1; //address goes here
-}//translateAddress*/
-
 
 //move the control flow back to the main loop and read the next line
 //redo is used to control page faults when the come back to this step
 	//0 - page fault (read same line)
 	//1 - read next line
 int readNextLine(int redo){
-	//1.) TODO: update working sets goes here
-	//if there was a page fault before, 
-	//don't update to the next line, just read it again
-	int ret = fscanf(fp, "%d %c %x", &PID, &RW, &addr);
-printf("line processId %d address %x operation %d\n", line.processId, line.currentAddress, line.currentOperation);
-	if(!redo)
-		grabNextLine(PID, RW, addr);
+	//1.)   TODO: update working sets goes here
 
-	return ret;
+
+	//2.)   if there was a page fault before, don't update to the next line, just read it again
+   int ret = 0;
+	if(!redo){
+      ret = fscanf(fp, "%d %c %x", &PID, &RW, &addr);
+		grabNextLine(PID, RW, addr);
+   }
+
+	return ret; //EOF on fail
 }//nextLine
 
 //update the gloabl struct line, so that it contains the next line's attributes
 void grabNextLine(int PID, char RW, uint addr){
+   program.runNumber++;
 	line.processId		= PID;
 	line.currentAddress = addr;
-	if(RW == 'W')
+	if(RW == 'W'){
 		line.currentOperation = 1;
+   } else {
+      line.currentOperation = 0;
+   }
 	return;
 }//grabNextLine
 
 //gracefully alert there was a seg fault
 void segFault(void){
-	printf("ERROR: Segmentation Fault!\n");
+	//printf("ERROR: Segmentation Fault!\n");
 }//segFault
 
 //write a dirty page to the disk; it needs to be updated
 void writeToDisk(struct frame evictedFrame){
-   doOp(1, evictedFrame.vAddress, DISKtime);
-	printf("writing to disk\n");
+   doOp(1, evictedFrame.vAddress, DISKtime, -1); //this is just a write back, no need to update the cache
+	//printf("writing to disk\n");
 }//writeToDisk
 
 //trigger the sequence of events that occur during a page fault
-int pageFault(int pageRequested){
-	printf("PAGE FAULT on 0x%X!\n", pageRequested);
+void pageFault(int pageRequested){
+	//printf("PAGE FAULT on 0x%X!\n", pageRequested);
 
    //1.	check if there is a free frame
 	int idx = checkForFreeFrame();
@@ -267,14 +316,28 @@ int pageFault(int pageRequested){
 	} 
 
 	//2.)	bring the page into the page table
+   //printf("pageTable[%d].vAddress = 0x%X, pageRequested = %d\n", idx, pageTable[idx].vAddress, pageRequested);
 	updatePageTable(&pageTable[idx], pageRequested);
+   //printf("pageTable[%d].vAddress = 0x%X, pageRequested = %d\n", idx, pageTable[idx].vAddress, pageRequested);
 
-   printf("pageTable[%d] after it was updated: %X\n", idx, pageTable[idx].vAddress);
-
-	//3.)	roll back to the previous line so that we can try it now the page has been loaded
-	printf("END PAGE FAULT, TRY AGAIN!\n");
-	return 1; //indicates to read the next line
+	//printf("END PAGE FAULT, TRY AGAIN!\n");
 }//pageFault
+
+//bring the page into the page table for future use
+void updatePageTable(struct frame *thisFrame, int pageRequested){
+   //bring the page into main memory
+   readFromDisk(thisFrame);
+   thisFrame->vAddress = pageRequested;
+   thisFrame->dirtyBit = 0;
+   thisFrame->referenceBit= 0;
+   if (pageReplAlgo = 0)
+      FIFOindex_page = PTES - (FIFOindex_page + 1 % PTES);
+}//updatePageTable
+
+//add the time it takes to read from the disk and bring the page into main memory
+void readFromDisk(struct frame *thisFrame){
+   doOp(0, thisFrame->vAddress, DISKtime, -1); //this is just a read from, no need to update the cache
+}//readFromDisk
 
 void getParams( int argc, char* argv[]){
 
@@ -399,3 +462,28 @@ void getParams( int argc, char* argv[]){
       }
    }
 }
+
+//print the current status of the main memory, and the page table
+void visual(void){
+   int i;
+   printf("***AFTER READING LINE %d***\nop: %d add: 0x%X\n", program.runNumber, line.currentOperation, line.currentAddress);
+   printf("mainMemory: [ ");
+   for(i=0; i<PTES; i++){
+      if(pageTable[i].vAddress != -1){
+         printf("0x%X ", pageTable[i]);
+      } else {
+         //printf("(empty frame) ");
+      }
+   }
+   printf("]\n");
+
+   printf("TLB: [ ");
+   for(i=0; i<TLBEntries; i++){
+      if(TLB[i].vAddress != -1){
+         printf("0x%X ", TLB[i].vAddress);
+      } else {
+         //printf("(empty TLB) ");
+      }
+   }
+   printf("]\n");   
+}//visual

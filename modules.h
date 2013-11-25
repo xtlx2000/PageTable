@@ -21,10 +21,12 @@ int MMtime = 2;
 int TLBtime = 1;
 int DISKtime = 1000;
 int pageReplAlgo = 1;
+int cacheReplAlgo = 1;
 int pageTableType = 1;
 int WSW = 5;
 
-int FIFOindex = 0;
+int FIFOindex_page = 0;
+int FIFOindex_cache = 0;
 
 int PID; // to be replaced by line struct
 char RW;
@@ -40,9 +42,10 @@ struct frame{
 };
 
 struct TLBEntry{
-	int vAddress;		//used to find if the address from the line is in the TLB
-	int pAddress;	//the translated virtual address
-	int frameNum;	// page table index of this page
+	int vAddress;			//used to find if the address from the line is in the TLB
+	int pAddress;			//the translated virtual address
+	int frameNum;			//page table index of this page
+	int dirtyBit;
 };
 
 struct data{
@@ -52,8 +55,8 @@ struct data{
 } line;
 
 struct perforamance{
-	double runningAverage;	//keep a running average of the total access time for each instruction
-	int currentRunningSum; //accumulated time for the current run 
+	float runningAverage;	//keep a running average of the total access time for each instruction
+	int currentRunningSum; 	//accumulated time for the current run 
 	int runNumber;			//the number of lines that you have read
 } program;
 
@@ -68,13 +71,12 @@ struct TLBEntry TLB[MAXTLB];
 struct frame pageTable[PTES];
 
 void initialization(void);
-void doOp(int operation, int location, int time);
+void doOp(int operation, int pAddress, int time, int vAddress);
 int checkTLB(int pageRequested);
 int grabTLBEntry(int idx);
 int grabPTE(int address);
 int checkPageTable(int pageRequested);
 int checkPageTableEntry(int pageRequested);
-//void translateAddress(struct PTE *thisPTE);
 void writeToDisk(struct frame evictedFrame);
 int checkValidAddress(int address);
 int checkDiskFound(int address);
@@ -83,9 +85,12 @@ int evict(void);
 int checkDirtyPTE(struct frame *thisFrame);
 void segFault(void);
 void updatePageTable(struct frame *thisFrame, int pageRequested);
-void addTime(int time);
 int readNextLine(int redo);
-int pageFault(int pageRequested);
+void pageFault(int pageRequested);
 int checkTLBEntry(int address);
 void getParams( int argc, char* argv[]);
 void grabNextLine(int PID, char RW, uint addr);
+void updateCacheTable(struct TLBEntry *thisTLB, int pAddress, int vAddress, int frameNum);
+void updateCache(int pAddresss, int vAddress);
+void visual(void);
+void readFromDisk(struct frame *thisFrame);
