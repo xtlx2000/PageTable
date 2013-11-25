@@ -20,10 +20,13 @@ int TLBEntries = 10;
 int MMtime = 2;
 int TLBtime = 1;
 int DISKtime = 1000;
-int pageReplAlgo = 1;
-int cacheReplAlgo = 1;
+
+int pageReplAlgo = 0;
+int cacheReplAlgo = 0;
+
 int pageTableType = 1;
 int WSW = 5;
+const int numFrames = 20;//PTES; TODO: ideally it would be this value
 
 int FIFOindex_page = 0;
 int FIFOindex_cache = 0;
@@ -68,7 +71,7 @@ struct processWorkingSets{
 //globals
 int frameReplacementAlg = 0;
 struct TLBEntry TLB[MAXTLB];
-struct frame pageTable[PTES];
+struct frame pageTable[20];
 
 void initialization(void);
 void doOp(int operation, int pAddress, int time, int vAddress);
@@ -81,9 +84,9 @@ void writeToDisk(struct frame evictedFrame);
 int checkValidAddress(int address);
 int checkDiskFound(int address);
 int checkForFreeFrame(void);
-int evict(void);
+int evictPage(void);
+int evictTLB(void);
 int checkDirtyPTE(struct frame *thisFrame);
-void segFault(void);
 void updatePageTable(struct frame *thisFrame, int pageRequested);
 int readNextLine(int redo);
 void pageFault(int pageRequested);

@@ -65,10 +65,9 @@ int main ( int argc, char* argv[]) {
             printf("Adding %d ns for a cache hit\n", TLBtime);
          }
 
-      } else {
+      } else 
          printf("ERROR: SEG FAULT\n");
-         segFault();
-      }
+      
       calcAverage();
       printf("%s %f %s\n", "Running average: ", program.runningAverage, "ns");
       printf("%s %d %s\n\n", "Running total: ", program.currentRunningSum, "ns");
