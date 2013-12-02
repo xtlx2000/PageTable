@@ -2,7 +2,6 @@
 Enormous library of functions that help to modularize this program
 */
 
-
 #include "modules.h"
 
 //used to init all global variables from parameters and malloc space for the data structures
@@ -20,6 +19,7 @@ void initialization(void){
       thisFrame.pAddress      = idx*4096;
 		thisFrame.dirtyBit		= 0;
 		thisFrame.referenceBit 	= 0;
+      thisFrame.processId     = -1;
 
 		pageTable[idx] 		= thisFrame;
 	}
@@ -54,14 +54,10 @@ void initialization(void){
 
 
    // init working sets 
-   for(idx = 0; idx< NUMPROCESSES; idx++ ){
-      struct workingSets thisWorkingSet;
-
-      thisWorkingSet.processWS = 0;
-      for (i= 0; i< WSW; i++ )
-         thisWorkingSet.pageFaults[i] = 1;
-      thisWorkingSet.head = NULL;
-	}
+   for(idx = 0; idx< NUMPROCESSES; idx++ ) {
+      initWorkingSet(&processWorkingSets[idx]);
+      printf("Avail: %d, Cur: %d\n", processWorkingSets[idx].availWorkingSet, processWorkingSets[idx].curWorkingSet);
+   }
 }//initilization
 
 //execute the operation on the memory location; return 
@@ -295,7 +291,9 @@ int checkForFreeFrame(void){
 	//printf("checking if there is a free frame\n");
 	int idx;
 	for(idx=0; idx<numFrames; idx++){
-		if(pageTable[idx].vAddress == -1){
+		if(pageTable[idx].vAddress == -1 &&
+         processWorkingSets[line.processId].availWorkingSet > 
+         processWorkingSets[line.processId].curWorkingSet)  {  
          //printf("THERE WAS A FREE FRAME @ %d\n", idx);
          return idx; //return the frame idx for the empty frame
       }
@@ -314,7 +312,7 @@ int evictPage(void){
 			//printf("evicting a frame base on the FIFO algorithm");
 			evictedFrame = pageTable[FIFOindex_page];
          retVal = FIFOindex_page;
-         FIFOindex_page = FIFOindex_page + 1 % numFrames;
+         FIFOindex_page = (FIFOindex_page + 1) % numFrames;
 			break;
 		case 1: // LRU
 			//printf("evicting a frame base on the LRU algorithm");
@@ -437,26 +435,38 @@ void pageFault(int pageRequested){
    //1.	check if there is a free frame
 	int idx = checkForFreeFrame();
 	if(idx < 0){
-      puts("PAGE EVICTION");
 		//1.a) evict someone using the replacement algorithms; check if the page is dirty
-		idx = evictPage();
-	} 
+      if  (processWorkingSets[line.processId].availWorkingSet ==
+         processWorkingSets[line.processId].curWorkingSet) {
+         printf("Avail: %d, Cur: %d\n", processWorkingSets[line.processId].availWorkingSet, processWorkingSets[line.processId].curWorkingSet);
+         puts("OWN PAGE EVICTION");
+         idx = evictOwnPage();
+      } else {
+         puts("PAGE EVICTION");
+		   idx = evictPage();
 
+      }
+	} 
+   printf("what id did you put the new page into: %d\n", idx);
 	//2.)	bring the page into the page table
    //printf("pageTable[%d].vAddress = 0x%X, pageRequested = %d\n", idx, pageTable[idx].vAddress, pageRequested);
 	updatePageTable(&pageTable[idx], pageRequested);
-   //printf("pageTable[%d].vAddress = 0x%X, pageRequested = %d\n", idx, pageTable[idx].vAddress, pageRequested);
+/*   printf("pageTable[%d].vAddress = 0x%X, pageRequested = %d\n", idx, pageTable[idx].vAddress, pageRequested);
 
-	//printf("END PAGE FAULT, TRY AGAIN!\n");
+	printf("END PAGE FAULT, TRY AGAIN!\n");*/
 }//pageFault
 
 //bring the page into the page table for future use
 void updatePageTable(struct frame *thisFrame, int pageRequested){
+   // WSaddition
+   processWorkingSets[line.processId].curWorkingSet++;
+
    //bring the page into main memory
    readFromDisk(thisFrame);
    thisFrame->vAddress = pageRequested;
    thisFrame->dirtyBit = 0;
    thisFrame->referenceBit= 0;
+   thisFrame->processId = line.processId;
 }//updatePageTable
 
 //add the time it takes to read from the disk and bring the page into main memory
@@ -619,3 +629,70 @@ void visual(void){
    		printf("]\n");
    }
 }//visual
+
+void initWorkingSet(struct workingSets *thisWorkingSet){
+   int i;
+   thisWorkingSet-> availWorkingSet = INITWS;
+   thisWorkingSet-> curWorkingSet = 0;
+   thisWorkingSet-> pageFaultCursor = 0;
+   for (i= 0; i< WSW; i++ )
+      thisWorkingSet-> pageFaults[i] = 0;
+}// end initWorkingSet
+
+int markWSPage(struct workingSets *thisWorkingSet, int fault){
+   thisWorkingSet->pageFaults[thisWorkingSet->pageFaultCursor] = fault;
+   thisWorkingSet->pageFaultCursor++;
+   thisWorkingSet->pageFaultCursor = thisWorkingSet->pageFaultCursor%WSW;
+
+   return calcWSPageFaults(thisWorkingSet);
+} // end markPageFault
+
+int calcWSPageFaults(struct workingSets *thisWorkingSet){
+   int numPageFaults = 0;
+   int i;
+   for (i=0; i<WSW; i++)
+      if(thisWorkingSet->pageFaults[i]==1) numPageFaults++;
+
+   return numPageFaults;
+}// end calcWSPageFaults
+
+int evictOwnPage(void){
+   //printf("evicting a frame to make room for someone else\n");
+   int retVal;
+   int index;
+   struct frame evictedFrame;
+   switch(pageReplAlgo){
+      case 0: //FIFO
+         index = FIFOindex_page;
+         printf("evicting a frame base on the FIFO algorithm: %d\n", FIFOindex_page);
+         while (pageTable[index].processId > -1) {
+            if ( pageTable[index].processId == line.processId ) {
+               evictedFrame = pageTable[index];
+               retVal = index;
+               FIFOindex_page = FIFOindex_page + 1 % numFrames;
+               break;
+            }
+            index = (index + 1) % numFrames;
+         }
+         retVal = -1;
+         break;
+      case 1: // LRU
+         //printf("evicting a frame base on the LRU algorithm");
+         //check for dirty and reference bit
+         break;
+      case 2: // MFU
+         //printf("evicting a frame base on the MFU algorithm");
+         break;
+      default:
+         retVal = -1;
+   }
+   printf("ret val: %d\n", retVal);
+
+   if(evictedFrame.dirtyBit){
+      puts("DIRTY BIT\n");
+      printf("Adding %d ns for a disk hit\n", DISKtime);
+      writeToDisk(evictedFrame);
+   }
+
+   return retVal;
+}

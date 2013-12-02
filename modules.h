@@ -13,7 +13,8 @@
 #define MAXWSW 10
 #define WSW 5
 #define NUMPROCESSES 5
-#define MINPAGEFAULT 3
+#define INITWS 5
+#define MINPAGEFAULT 2
 #define MAXPAGEFAULT 10
 
 FILE *fp; //input file pointer
@@ -34,7 +35,7 @@ int pageTablePageReplAlgo = 0;
 
 //selects the parameter for which kind of page table we want
 //	0 - single; 1 - double; 2 - inverted
-int pageTableType = 1;
+int pageTableType = 0;
 
 
 //const int WSW = 5;
@@ -57,6 +58,7 @@ struct frame{
 	int pAddress;			//the physical address that goes with this page
 	int dirtyBit;			//is the frame dirty?
 	int referenceBit;		//has the frame been referenced?
+	int processId;			//id for the process owning this page
 };
 
 struct pageTablePage{
@@ -86,17 +88,11 @@ struct perforamance{
 } program;
 
 struct workingSets{
-	int processWS;			// number of actual pages in the working set, could be less than WSW
+	int availWorkingSet;	// number of pages available to this process
+	int curWorkingSet;		// number of actual pages in the working set, could be less than WS
 	int pageFaults[WSW];	// maintains page faults for the last WSW instructions
-	struct workingSetElement *head; // linked list of pages in the WS
+	int pageFaultCursor;	// maintains position in the page fault array
 };
-
-struct workingSetElement{
-	struct frame *workingSetFrame;
-	struct frame *next;
-};
-
-
 
 //globals
 struct TLBEntry TLB[MAXTLB];
@@ -134,3 +130,11 @@ int grabPTP(int pageRequested);
 int checkPageDirectory(int pageTablePageRequested);
 int evictPageTablePage(void);
 void updatePageDirectory(int idx, int pageTablePageRequested);
+
+void initWorkingSet(struct workingSets *thisWorkingSet);
+
+int markWSPage(struct workingSets *thisWorkingSet, int fault);
+
+int calcWSPageFaults(struct workingSets *thisWorkingSet);
+
+int evictOwnPage(void);
