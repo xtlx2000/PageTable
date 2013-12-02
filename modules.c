@@ -1,5 +1,5 @@
 /*
-Small library of functions that help to modularize this program
+Enormous library of functions that help to modularize this program
 */
 
 
@@ -12,6 +12,7 @@ void initialization(void){
    
    //init our empty page table
    int idx;
+   int i;
 	for(idx = 0; idx<numFrames; idx++){
 		struct frame thisFrame;
 
@@ -33,6 +34,7 @@ void initialization(void){
       thisTLB.dirtyBit =  0;
       TLB[idx] = thisTLB;
    }
+<<<<<<< Updated upstream
    
    switch(pageTableType){
       case 0: //single
@@ -49,6 +51,18 @@ void initialization(void){
          break;
       case 2: //inverted
          break;
+=======
+
+   // init working sets 
+   for(idx = 0; idx< NUMPROCESSES; idx++ ){
+      struct workingSets thisWorkingSet;
+
+      thisWorkingSet.processWS = 0;
+      for (i= 0; i< WSW; i++ )
+         thisWorkingSet.pageFaults[i] = 1;
+      thisWorkingSet.head = NULL;
+
+>>>>>>> Stashed changes
    }
 }//initilization
 
@@ -91,18 +105,18 @@ int evictTLB(void){
    struct TLBEntry evictedTLBEntry;
    switch(cacheReplAlgo){
       case 0: //FIFO
-         //printf("evicting a frame base on the LRU algorithm");
+         //printf("evicting a frame based on the FIFO algorithm");
          evictedTLBEntry = TLB[FIFOindex_cache];
          retVal = FIFOindex_cache;
          //increment to the next element
          FIFOindex_cache = (FIFOindex_cache + 1) % TLBEntries;
          break;
       case 1: // LRU
-         //printf("evicting a frame base on the FIFO algorithm");
+         //printf("evicting a frame based on the LRU algorithm");
          //check for dirty and reference bit
          break;
       case 2: // MFU
-         //printf("evicting a frame base on the MFU algorithm");
+         //printf("evicting a frame based on the MFU algorithm");
          break;
       default:
          retVal = -1;
@@ -299,13 +313,13 @@ int evictPage(void){
    struct frame evictedFrame;
    switch(pageReplAlgo){
 		case 0: //FIFO
-			//printf("evicting a frame base on the LRU algorithm");
+			//printf("evicting a frame base on the FIFO algorithm");
 			evictedFrame = pageTable[FIFOindex_page];
          retVal = FIFOindex_page;
          FIFOindex_page = FIFOindex_page + 1 % numFrames;
 			break;
 		case 1: // LRU
-			//printf("evicting a frame base on the FIFO algorithm");
+			//printf("evicting a frame base on the LRU algorithm");
          //check for dirty and reference bit
 			break;
 		case 2: // MFU
@@ -418,6 +432,9 @@ void writeToDisk(struct frame evictedFrame){
 //trigger the sequence of events that occur during a page fault
 void pageFault(int pageRequested){
 	//printf("PAGE FAULT on 0x%X!\n", pageRequested);
+
+   // update page faults for the working set of the calling process
+   //processes.pageFaults[line.processId]++; // TODO
 
    //1.	check if there is a free frame
 	int idx = checkForFreeFrame();
@@ -581,7 +598,13 @@ void visual(void){
    for(i=0; i<numFrames; i++){
       if(pageTable[i].vAddress != -1){
          printf("0x%X ", pageTable[i].vAddress);
+<<<<<<< Updated upstream
       } 
+=======
+      } else {
+         //printf("(empty frame) ");
+      }
+>>>>>>> Stashed changes
    }
    printf("]\n");
 

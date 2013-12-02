@@ -10,7 +10,11 @@
 #define PTES ADDRESSPACE/PAGESIZE
 #define MAXTLB PTES/2
 #define MAXTIME 9999999
-#define MAXWSW 50
+#define MAXWSW 10
+#define WSW 5
+#define NUMPROCESSES 5
+#define MINPAGEFAULT 3
+#define MAXPAGEFAULT 10
 
 FILE *fp; //input file pointer
 
@@ -32,8 +36,13 @@ int pageTablePageReplAlgo = 0;
 //	0 - single; 1 - double; 2 - inverted
 int pageTableType = 1;
 
+<<<<<<< Updated upstream
 
 int WSW = 5;
+=======
+//const int WSW = 5;
+
+>>>>>>> Stashed changes
 const int numFrames = 20;//PTES; TODO: ideally it would be this value
 const int numPageTablePages = 20;//this is the number of page table pages we can store in memory at once
 
@@ -77,20 +86,31 @@ struct perforamance{
 	float runningAverage;	//keep a running average of the total access time for each instruction
 	int currentRunningSum; 	//accumulated time for the current run 
 	int runNumber;			//the number of lines that you have read
+	int totalPageFaults;	// Joe: I think this would be a good performance metric to add 
 } program;
 
-struct processWorkingSets{
-	int processesWS[5];
-	int pageFault[5];
+struct workingSets{
+	int processWS;			// number of actual pages in the working set, could be less than WSW
+	int pageFaults[WSW];	// maintains page faults for the last WSW instructions
+	struct workingSetElement *head; // linked list of pages in the WS
+};
+
+struct workingSetElement{
+	struct frame *workingSetFrame;
+	struct frame *next;
 };
 
 
 
 //globals
-int frameReplacementAlg = 0;
 struct TLBEntry TLB[MAXTLB];
+<<<<<<< Updated upstream
 struct frame pageTable[20]; //TODO: these values need to be changed to their correct parameters
 struct pageTablePage pageDirectory[20];
+=======
+struct frame pageTable[20];
+struct workingSets processWorkingSets[NUMPROCESSES]; // TODO
+>>>>>>> Stashed changes
 
 void initialization(void);
 void doOp(int operation, int pAddress, int time, int vAddress);
