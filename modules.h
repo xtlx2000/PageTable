@@ -26,17 +26,19 @@ int DISKtime = 1000;
 //	0 - FIFO; 1 - LRU; 2 - MFU
 int pageReplAlgo = 0;
 int cacheReplAlgo = 0;
+int pageTablePageReplAlgo = 0;
 
 //selects the parameter for which kind of page table we want
 //	0 - single; 1 - double; 2 - inverted
-int pageTableType = 2;
+int pageTableType = 1;
 
 
 int WSW = 5;
 const int numFrames = 20;//PTES; TODO: ideally it would be this value
-const int numPageTablePages = 20;//this is the number of partitions we have split our page table into
+const int numPageTablePages = 20;//this is the number of page table pages we can store in memory at once
 
 int FIFOindex_page = 0;
+int FIFOindex_page_table_page = 0;
 int FIFOindex_cache = 0;
 
 int PID; // to be replaced by line struct
@@ -54,8 +56,9 @@ struct frame{
 
 struct pageTablePage{
 	int idx;				//which page table partition is it?
+	int startAddress;
 	int dirtyBit;
-}
+};
 
 struct TLBEntry{
 	int vAddress;			//used to find if the address from the line is in the TLB
@@ -86,8 +89,8 @@ struct processWorkingSets{
 //globals
 int frameReplacementAlg = 0;
 struct TLBEntry TLB[MAXTLB];
-struct frame pageTable[20];
-struct pageTablePage pageDirectory[numPageTablePages];
+struct frame pageTable[20]; //TODO: these values need to be changed to their correct parameters
+struct pageTablePage pageDirectory[20];
 
 void initialization(void);
 void doOp(int operation, int pAddress, int time, int vAddress);
@@ -113,3 +116,8 @@ void updateCacheTable(struct TLBEntry *thisTLB, int pAddress, int vAddress, int 
 void updateCache(int pAddresss, int vAddress);
 void visual(void);
 void readFromDisk(struct frame *thisFrame);
+void pageTablePageFault(int pageTablePageRequested);
+int grabPTP(int pageRequested);
+int checkPageDirectory(int pageTablePageRequested);
+int evictPageTablePage(void);
+void updatePageDirectory(int idx, int pageTablePageRequested);

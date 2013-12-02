@@ -41,7 +41,7 @@ void initialization(void){
          for(idx = 0; idx<numPageTablePages; idx++){
             struct pageTablePage thisPageTablePage;
 
-            thisPageTablePage.idx            = idx;
+            thisPageTablePage.idx            = -1;
             thisPageTablePage.startAddress   = idx*4096;
 
             pageDirectory[idx]               = thisPageTablePage;
@@ -152,21 +152,21 @@ int checkPageTable(int pageRequested){
 
 //check to see if the actual page is in the TLB
 int checkPageTableEntry(int pageRequested){
-   int i;
-
+	int i, j, pageTablePageRequested;;
    //check if we are in a multi-level page table
    switch(pageTableType){
       case 0:  //single level: simply check if any of the frames currently are holding your requested page
-         for ( i=0; i<numFrames; i++ ) {
-               if (pageTable[i].vAddress == pageRequested)
-                  return i;
-         }
-         break;
+        for ( i=0; i<numFrames; i++ ) {
+            if (pageTable[i].vAddress == pageRequested)
+        	    return i;
+        }
+        break;
       case 1:  //multi-level: first, check if the page table page is in memory; if it is, use it to check 
                //             if any of the frames are holding your requested page. If not, bring the page 
                //             page into memory and then check
-         int i, j;
-         int pageTablePageRequested = grabPTP(pageRequested);
+      	puts("multi-level PAGE TABLE!");
+         pageTablePageRequested = grabPTP(pageRequested);
+         printf("WHAT IS THE PAGE TABLE PAGE REQUESTED? %d\n", pageTablePageRequested);
          if(pageTablePageRequested != -1){
             i = checkPageDirectory(pageTablePageRequested);
             if(i == -1){ //page table page was NOT in memory
@@ -190,6 +190,7 @@ int checkPageTableEntry(int pageRequested){
 
 //bring in a page table page to memory
 void pageTablePageFault(int pageTablePageRequested){
+	puts("PAGE TABLE PAGE FAULT!");
    //1.  check if there is a free page table page
    int idx = checkForFreeFrame();
    if(idx < 0){
@@ -203,8 +204,8 @@ void pageTablePageFault(int pageTablePageRequested){
 //grabs the page table page that contains the address linked to the requested page
 int grabPTP(int pageRequested){
    int idx;
-   for(idx=0; idx<numPageTablePages; idx++){
-      if((idx+1)*4096*1024 > address){
+   for(idx=0; idx<PTES; idx++){
+      if((idx+1)*4096 > pageRequested){
          return idx;
       }
    }
@@ -224,22 +225,42 @@ int checkPageDirectory(int pageTablePageRequested){
 }//checkPageDirectory
 
 //remove a page table page from the page directory
-//TODO: WRITE THIS
 int evictPageTablePage(void){
-   int idx = 0;
-   struct pageTablePage evictedPageTablePage = pageDirectory[idx];
+   struct pageTablePage evictedPageTablePage;
+   int retVal;
+
+   switch(pageTablePageReplAlgo){
+      case 0: //FIFO
+         //printf("evicting a frame base on the LRU algorithm");
+         evictedPageTablePage = pageDirectory[FIFOindex_page_table_page];
+         retVal = FIFOindex_page_table_page;
+         //increment to the next element
+         FIFOindex_page_table_page = (FIFOindex_page_table_page + 1) % numPageTablePages;
+         break;
+      case 1: // LRU
+         //printf("evicting a frame base on the FIFO algorithm");
+         //check for dirty and reference bit
+         break;
+      case 2: // MFU
+         //printf("evicting a frame base on the MFU algorithm");
+         break;
+      default:
+         retVal = -1;
+   }
+
    if(evictedPageTablePage.dirtyBit){
       puts("DIRTY BIT\n");
       printf("Adding %d ns for a disk hit\n", DISKtime);
       doOp(1, -1, DISKtime, -1);
    }  
-   return idx; //indicates the index of the pageDirector to evict 
+   return retVal; //indicates the index of the pageDirector to evict 
 }//evictPageTablePage
 
 //replace the page table page you evicted with a new one
-void updatePageDirectory(int idx, struct pageTablePage pageTablePageRequested){
-   pageDirectory[idx].idx        = pageTablePageRequested.idx;
-   pageDirectory[idx].dirtyBit   = 0;
+void updatePageDirectory(int idx, int pageTablePageRequested){
+   pageDirectory[idx].idx        	= pageTablePageRequested;
+   pageDirectory[idx].startAddress  = pageTablePageRequested*4096;
+   pageDirectory[idx].dirtyBit   	= 0;
 }//updatePageDirectory
 
 //check to see if the address we are looking for is valid
@@ -325,12 +346,6 @@ int grabPTE(int address){
 int checkTLB(int pageRequested){
 	int idx;
 	//printf("Checking the TLB\n");
-
-	/*testing simpliest case*/
-	/*struct TLBEntry thisTLB;
-	thisTLB.virtualAddress = 50;
-	thisTLB.physicalAddress = 100;
-	TLB[10] = thisTLB;*/
 
 	idx = checkTLBEntry(pageRequested);
 	if(idx > -1){	//check if it was in the TLB
@@ -565,10 +580,8 @@ void visual(void){
    printf("mainMemory: [ ");
    for(i=0; i<numFrames; i++){
       if(pageTable[i].vAddress != -1){
-         printf("0x%X ", pageTable[i]);
-      } else {
-         //printf("(empty frame) ");
-      }
+         printf("0x%X ", pageTable[i].vAddress);
+      } 
    }
    printf("]\n");
 
@@ -581,4 +594,13 @@ void visual(void){
       }
    }
    printf("]\n");   
+   if(pageTableType == 1){
+   		printf("pageDirectory: [");
+   		for(i=0; i<numPageTablePages; i++){
+		  if(pageDirectory[i].idx != -1){
+		     printf("0x%X ", pageDirectory[i].startAddress);
+		  } 
+		}
+   		printf("]\n");
+   }
 }//visual
