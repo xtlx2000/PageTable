@@ -21,12 +21,20 @@ int MMtime = 2;
 int TLBtime = 1;
 int DISKtime = 1000;
 
+//selects the parameter for which kind of replacement algo to used
+//TODO: fill your replacement type here
+//	0 - FIFO; 1 - LRU; 2 - MFU
 int pageReplAlgo = 0;
 int cacheReplAlgo = 0;
 
-int pageTableType = 1;
+//selects the parameter for which kind of page table we want
+//	0 - single; 1 - double; 2 - inverted
+int pageTableType = 2;
+
+
 int WSW = 5;
 const int numFrames = 20;//PTES; TODO: ideally it would be this value
+const int numPageTablePages = 20;//this is the number of partitions we have split our page table into
 
 int FIFOindex_page = 0;
 int FIFOindex_cache = 0;
@@ -43,6 +51,11 @@ struct frame{
 	int dirtyBit;			//is the frame dirty?
 	int referenceBit;		//has the frame been referenced?
 };
+
+struct pageTablePage{
+	int idx;				//which page table partition is it?
+	int dirtyBit;
+}
 
 struct TLBEntry{
 	int vAddress;			//used to find if the address from the line is in the TLB
@@ -68,10 +81,13 @@ struct processWorkingSets{
 	int pageFault[5];
 };
 
+
+
 //globals
 int frameReplacementAlg = 0;
 struct TLBEntry TLB[MAXTLB];
 struct frame pageTable[20];
+struct pageTablePage pageDirectory[numPageTablePages];
 
 void initialization(void);
 void doOp(int operation, int pAddress, int time, int vAddress);

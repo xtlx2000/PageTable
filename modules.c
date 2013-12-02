@@ -33,11 +33,28 @@ void initialization(void){
       thisTLB.dirtyBit =  0;
       TLB[idx] = thisTLB;
    }
+   
+   switch(pageTableType){
+      case 0: //single
+         break;
+      case 1: //double
+         for(idx = 0; idx<numPageTablePages; idx++){
+            struct pageTablePage thisPageTablePage;
+
+            thisPageTablePage.idx            = idx;
+            thisPageTablePage.startAddress   = idx*4096;
+
+            pageDirectory[idx]               = thisPageTablePage;
+         }
+         break;
+      case 2: //inverted
+         break;
+   }
 }//initilization
 
 //execute the operation on the memory location; return 
 void doOp(int operation, int pAddress, int time, int vAddress){
-   if(vAddress > -1)
+   if(vAddress > -1 && pAddress > -1)
       updateCache(pAddress, vAddress);
 
    program.currentRunningSum += time;
@@ -135,15 +152,95 @@ int checkPageTable(int pageRequested){
 
 //check to see if the actual page is in the TLB
 int checkPageTableEntry(int pageRequested){
-   //printf("Checking to see if the requested page table entry is in the page table\n");
    int i;
-   //printf("if(%X == %X)\n", pageTable[0].vAddress, pageRequested);
-   for ( i=0; i<numFrames; i++ ) {
-      if (pageTable[i].vAddress == pageRequested)
-         return i;
+
+   //check if we are in a multi-level page table
+   switch(pageTableType){
+      case 0:  //single level: simply check if any of the frames currently are holding your requested page
+         for ( i=0; i<numFrames; i++ ) {
+               if (pageTable[i].vAddress == pageRequested)
+                  return i;
+         }
+         break;
+      case 1:  //multi-level: first, check if the page table page is in memory; if it is, use it to check 
+               //             if any of the frames are holding your requested page. If not, bring the page 
+               //             page into memory and then check
+         int i, j;
+         int pageTablePageRequested = grabPTP(pageRequested);
+         if(pageTablePageRequested != -1){
+            i = checkPageDirectory(pageTablePageRequested);
+            if(i == -1){ //page table page was NOT in memory
+               pageTablePageFault(pageTablePageRequested);
+            }//if
+
+            for ( j=0; j<numFrames; j++ ) {  //is the page in one of the frames already?
+              if (pageTable[j].vAddress == pageRequested)
+                  return j;
+            }//for
+         }
+
+         break;
+      case 2:
+         break;
+
    }
-   return -1; //indicates the page table does not contain the page table entry
+
+   return -1; //indicates that it was not in memory
 }//checkPageTableEntry
+
+//bring in a page table page to memory
+void pageTablePageFault(int pageTablePageRequested){
+   //1.  check if there is a free page table page
+   int idx = checkForFreeFrame();
+   if(idx < 0){
+      puts("PAGE TABLE PAGE EVICTION");
+      //1.a if there isn't one, evict someone then bring in the new page table page
+      idx = evictPageTablePage(); // pick a page table page to evict
+   }
+   updatePageDirectory(idx, pageTablePageRequested);
+}//pageTablePageFault
+
+//grabs the page table page that contains the address linked to the requested page
+int grabPTP(int pageRequested){
+   int idx;
+   for(idx=0; idx<numPageTablePages; idx++){
+      if((idx+1)*4096*1024 > address){
+         return idx;
+      }
+   }
+   return -1; //indicates if the it could not find a page
+}//pageRequested
+
+//loop through all the page directory frames and see if your page table page needs to be brought into memory
+int checkPageDirectory(int pageTablePageRequested){
+   int i;
+   for(i=0; i<numPageTablePages; i++){
+      if(pageDirectory[i].idx == pageTablePageRequested){       //the page table page was in memory
+         return i;
+      }
+   }//for
+
+   return -1; //indicates the page table page was not in memmory
+}//checkPageDirectory
+
+//remove a page table page from the page directory
+//TODO: WRITE THIS
+int evictPageTablePage(void){
+   int idx = 0;
+   struct pageTablePage evictedPageTablePage = pageDirectory[idx];
+   if(evictedPageTablePage.dirtyBit){
+      puts("DIRTY BIT\n");
+      printf("Adding %d ns for a disk hit\n", DISKtime);
+      doOp(1, -1, DISKtime, -1);
+   }  
+   return idx; //indicates the index of the pageDirector to evict 
+}//evictPageTablePage
+
+//replace the page table page you evicted with a new one
+void updatePageDirectory(int idx, struct pageTablePage pageTablePageRequested){
+   pageDirectory[idx].idx        = pageTablePageRequested.idx;
+   pageDirectory[idx].dirtyBit   = 0;
+}//updatePageDirectory
 
 //check to see if the address we are looking for is valid
 int checkValidAddress(int address){	
