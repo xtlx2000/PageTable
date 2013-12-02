@@ -36,13 +36,9 @@ int pageTablePageReplAlgo = 0;
 //	0 - single; 1 - double; 2 - inverted
 int pageTableType = 1;
 
-<<<<<<< Updated upstream
 
-int WSW = 5;
-=======
 //const int WSW = 5;
 
->>>>>>> Stashed changes
 const int numFrames = 20;//PTES; TODO: ideally it would be this value
 const int numPageTablePages = 20;//this is the number of page table pages we can store in memory at once
 
@@ -104,13 +100,10 @@ struct workingSetElement{
 
 //globals
 struct TLBEntry TLB[MAXTLB];
-<<<<<<< Updated upstream
 struct frame pageTable[20]; //TODO: these values need to be changed to their correct parameters
 struct pageTablePage pageDirectory[20];
-=======
-struct frame pageTable[20];
 struct workingSets processWorkingSets[NUMPROCESSES]; // TODO
->>>>>>> Stashed changes
+
 
 void initialization(void);
 void doOp(int operation, int pAddress, int time, int vAddress);

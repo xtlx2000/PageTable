@@ -34,7 +34,6 @@ void initialization(void){
       thisTLB.dirtyBit =  0;
       TLB[idx] = thisTLB;
    }
-<<<<<<< Updated upstream
    
    switch(pageTableType){
       case 0: //single
@@ -51,7 +50,8 @@ void initialization(void){
          break;
       case 2: //inverted
          break;
-=======
+     }
+
 
    // init working sets 
    for(idx = 0; idx< NUMPROCESSES; idx++ ){
@@ -61,9 +61,7 @@ void initialization(void){
       for (i= 0; i< WSW; i++ )
          thisWorkingSet.pageFaults[i] = 1;
       thisWorkingSet.head = NULL;
-
->>>>>>> Stashed changes
-   }
+	}
 }//initilization
 
 //execute the operation on the memory location; return 
@@ -598,13 +596,7 @@ void visual(void){
    for(i=0; i<numFrames; i++){
       if(pageTable[i].vAddress != -1){
          printf("0x%X ", pageTable[i].vAddress);
-<<<<<<< Updated upstream
-      } 
-=======
-      } else {
-         //printf("(empty frame) ");
       }
->>>>>>> Stashed changes
    }
    printf("]\n");
 
