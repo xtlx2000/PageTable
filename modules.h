@@ -4,7 +4,6 @@
 
 #include <stdio.h>
 
-#define BITS 32
 #define ADDRESSPACE 4294967296
 #define PAGESIZE 4096
 #define PTES ADDRESSPACE/PAGESIZE
@@ -18,6 +17,7 @@
 #define MAXPTP 30
 
 FILE *fp; //input file pointer
+char *paramFileName;
 
 // global param variables and defaults
 int maxPages = 500;
@@ -100,41 +100,44 @@ struct frame pageTable[20]; //TODO: these values need to be changed to their cor
 struct pageTablePage pageDirectory[20];
 struct workingSets processWorkingSets[NUMPROCESSES]; // TODO
 
-
+//function declarations
 void initialization(void);
+void getParams( int argc, char* argv[]);
+void loadParams(char *paramFileName);
+
+int readNextLine(int redo);
 void doOp(int operation, int pAddress, int time, int vAddress);
+void grabNextLine(int PID, char RW, uint addr);
+
 int checkTLB(int pageRequested);
 int grabTLBEntry(int idx);
-int grabPTE(int address);
-int checkPageTable(int pageRequested);
-int checkPageTableEntry(int pageRequested);
-void writeToDisk(struct frame evictedFrame);
-int checkValidAddress(int address);
-int checkDiskFound(int address);
-int checkForFreeFrame(void);
-int evictPage(void);
-int evictTLB(void);
-int checkDirtyPTE(struct frame *thisFrame);
-void updatePageTable(struct frame *thisFrame, int pageRequested);
-int readNextLine(int redo);
-void pageFault(int pageRequested);
 int checkTLBEntry(int address);
-void getParams( int argc, char* argv[]);
-void grabNextLine(int PID, char RW, uint addr);
+int evictTLB(void);
 void updateCacheTable(struct TLBEntry *thisTLB, int pAddress, int vAddress, int frameNum);
 void updateCache(int pAddresss, int vAddress);
-void visual(void);
-void readFromDisk(struct frame *thisFrame);
-void pageTablePageFault(int pageTablePageRequested);
+
 int grabPTP(int pageRequested);
+void pageTablePageFault(int pageTablePageRequested);
 int checkPageDirectory(int pageTablePageRequested);
 int evictPageTablePage(void);
 void updatePageDirectory(int idx, int pageTablePageRequested);
 
+int grabPTE(int address);
+int checkPageTable(int pageRequested);
+int checkPageTableEntry(int pageRequested);
+void pageFault(int pageRequested);
+int checkForFreeFrame(void);
+int evictPage(void);
+int checkDirtyPTE(struct frame *thisFrame);
+void updatePageTable(struct frame *thisFrame, int pageRequested);
+
+void writeToDisk(struct frame evictedFrame);
+void readFromDisk(struct frame *thisFrame);
+int checkDiskFound(int address);
+
 void initWorkingSet(struct workingSets *thisWorkingSet);
-
 int markWSPage(struct workingSets *thisWorkingSet, int fault);
-
 int calcWSPageFaults(struct workingSets *thisWorkingSet);
-
 int evictOwnPage(void);
+
+void visual(void);

@@ -24,7 +24,10 @@ int main ( int argc, char* argv[]) {
    int redo = 0;
    int numPageFaults = 0;
 
+   printf("Starting getParams\n");
    getParams(argc, argv);
+   printf("Starting loadParams\n");
+   loadParams(paramFileName);
    initialization();
 
    //attempt to open the file
@@ -36,7 +39,6 @@ int main ( int argc, char* argv[]) {
          }
    }
 
-   // main code goes here
    while (readNextLine(redo) != EOF) {
       puts("\n**************************");
       if(redo)
@@ -108,7 +110,4 @@ int main ( int argc, char* argv[]) {
 
    //close the file
    if ( fp != NULL) { fclose(fp);printf("File closed.\n\n");}
-
-   loadParams();
-
 }//main

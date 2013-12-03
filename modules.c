@@ -52,11 +52,9 @@ void initialization(void){
          break;
      }
 
-
    // init working sets 
    for(idx = 0; idx< NUMPROCESSES; idx++ ) {
       initWorkingSet(&processWorkingSets[idx]);
-      printf("Avail: %d, Cur: %d\n", processWorkingSets[idx].availWorkingSet, processWorkingSets[idx].curWorkingSet);
    }
 }//initilization
 
@@ -271,14 +269,6 @@ void updatePageDirectory(int idx, int pageTablePageRequested){
    pageDirectory[idx].dirtyBit   	= 0;
 }//updatePageDirectory
 
-//check to see if the address we are looking for is valid
-int checkValidAddress(int address){	
-	//printf("checking to see if 0x%X is a valid address\n", address);
-   if (address >= 0 || address <= ADDRESSPACE)
-      return 1; //indicates a valid address
-   return 0;
-}//checkValidAddress
-
 //check to see if the requested data was found in disk
 int checkDiskFound(int address){
 	//printf("checking to see if the address is in disk", address);
@@ -475,11 +465,10 @@ void readFromDisk(struct frame *thisFrame){
 }//readFromDisk
 
 void getParams( int argc, char* argv[]){
-
    if ( argc >= 2 ) { // flags or params are set
       int i;
       for (i=1 ; i<argc ; i++) {
-         // User specified file 
+         // User specified input file 
          if (strncmp(argv[i],"file=", 5)==0 ) {
             fp = fopen(argv[i]+5, "r");
             if (fp == NULL) {
@@ -489,6 +478,11 @@ void getParams( int argc, char* argv[]){
             else {
                printf("File option engaged: %s\n", argv[i]+5);
             }
+         // User specified param file 
+         } else if (strncmp(argv[i],"paramFile=", 10)==0 ) {
+            printf("Parameter file option engaged.\n");
+            paramFileName = argv[i]+10;
+            printf("Will attempt to read parameters from: %s.\n", paramFileName);
          // Verbose option 
          } else if (strcmp(argv[i],"-verbose")==0 || strcmp(argv[i],"-v")==0) {
             printf("Verbose option engaged.\n");
@@ -497,102 +491,104 @@ void getParams( int argc, char* argv[]){
          } else if (strcmp(argv[i],"-veryverbose")==0 || strcmp(argv[i],"-vv")==0) {
             printf("Very Verbose option engaged.\n");
             v = 2;
-         // Number of pages specified
-         } else if (strncmp(argv[i],"Pages=", 6)==0 ) {
-            int value;
-            value = atoi(argv[i]+6);
-            if ( value<1 || value>PTES ) {
-               printf("usage: Pages={1-%d}\n", (int)PTES);
-            } else {
-               maxPages = value;
-               printf("Number of pages set to %d.\n", maxPages);
-            }
-         // Max Number of TLB page table entries specified
-         } else if (strncmp(argv[i],"TLB=", 4)==0 ) {
-            int value;
-            value = atoi(argv[i]+4);
-            if ( value<1 || value>MAXTLB ) {
-               printf("usage: TLB={1-%d}\n", (int)MAXTLB);
-            } else {
-               TLBEntries = value; 
-               printf("Max number of TLB entries set to %d.\n", TLBEntries);
-            }
-         // time needed to read and write main memory specified
-         } else if (strncmp(argv[i],"MMtime=", 7)==0 ) {
-            int value;
-            value = atoi(argv[i]+7);
-            if ( value<1 || value>MAXTIME ) {
-               printf("usage: MMtime={1-%d} (nsec)\n", MAXTIME);
-            } else {
-               MMtime = value;
-               printf("Time needed to read/write a main memory");
-               printf("page set to %d (nsec).\n", value);
-            }
-            // time needed to read/write a page table entry in the TLB specified 
-         } else if (strncmp(argv[i],"TLBtime=", 8)==0 ) {
-            int value;
-            value = atoi(argv[i]+8);
-            if ( value<1 || value>MAXTIME ) {
-               printf("usage: TLBtime={1-%d} (nsec)\n", MAXTIME);
-            } else {
-               TLBtime = value;
-               printf("Time needed to read/write a page table entry");
-               printf(" in the TLB set to %d (nsec).\n", TLBtime);
-            }
-            // time needed to read/write a page to/from disk specified
-         } else if (strncmp(argv[i],"DISKtime=", 9)==0 ) {
-            int value;
-            value = atoi(argv[i]+9);
-            if ( value<1 || value>MAXTIME ) {
-               printf("usage: DISKtime={1-%d} (nsec)\n", MAXTIME);
-            } else {
-               DISKtime = value*1000;
-               printf("Time needed to read/write a page to/from disk");
-               printf(" set to %d (msec).\n", DISKtime);
-            }
-         // Page replacement algorithm specified
-         } else if (strncmp(argv[i],"PR=",3)==0) {
-            int value;
-            value = atoi(argv[i]+3);
-            if ( value<1 || value>3 ) {
-               printf("usage: PageRep={1=FIFO, 2=LRU, 3=MFU}\n");
-            } else {
-               pageReplAlgo = value;
-               printf("Page Replacement set to %d.\n", pageReplAlgo);
-            }
-         // Page table type specified
-         } else if (strncmp(argv[i],"PT=",3)==0) {
-            int value;
-            value = atoi(argv[i]+3);
-            if ( value<1 || value>3 ) {
-               printf("usage: PT={1=Single level, 2=Directory, 3=Inverted}\n");
-            } else {
-               pageTableType = value;
-               printf("Page Table type set to %d.\n", pageTableType);
-            }
-         // Working Set Window specified
-         } else if (strncmp(argv[i],"WSW=",4)==0) {
-            int value;
-            value = atoi(argv[i]+4);
-            if ( value<1 || value>MAXWSW ) {
-               printf("usage: WSW={1-%d}\n", MAXWSW);
-            } else {
-               pageTableType = value;
-               printf("Working Set Window set to %d.\n", pageTableType);
-            }
+         // // Number of pages specified
+         // } else if (strncmp(argv[i],"Pages=", 6)==0 ) {
+         //    int value;
+         //    value = atoi(argv[i]+6);
+         //    if ( value<1 || value>PTES ) {
+         //       printf("usage: Pages={1-%d}\n", (int)PTES);
+         //    } else {
+         //       maxPages = value;
+         //       printf("Number of pages set to %d.\n", maxPages);
+         //    }
+         // // Max Number of TLB page table entries specified
+         // } else if (strncmp(argv[i],"TLB=", 4)==0 ) {
+         //    int value;
+         //    value = atoi(argv[i]+4);
+         //    if ( value<1 || value>MAXTLB ) {
+         //       printf("usage: TLB={1-%d}\n", (int)MAXTLB);
+         //    } else {
+         //       TLBEntries = value; 
+         //       printf("Max number of TLB entries set to %d.\n", TLBEntries);
+         //    }
+         // // time needed to read and write main memory specified
+         // } else if (strncmp(argv[i],"MMtime=", 7)==0 ) {
+         //    int value;
+         //    value = atoi(argv[i]+7);
+         //    if ( value<1 || value>MAXTIME ) {
+         //       printf("usage: MMtime={1-%d} (nsec)\n", MAXTIME);
+         //    } else {
+         //       MMtime = value;
+         //       printf("Time needed to read/write a main memory");
+         //       printf("page set to %d (nsec).\n", value);
+         //    }
+         //    // time needed to read/write a page table entry in the TLB specified 
+         // } else if (strncmp(argv[i],"TLBtime=", 8)==0 ) {
+         //    int value;
+         //    value = atoi(argv[i]+8);
+         //    if ( value<1 || value>MAXTIME ) {
+         //       printf("usage: TLBtime={1-%d} (nsec)\n", MAXTIME);
+         //    } else {
+         //       TLBtime = value;
+         //       printf("Time needed to read/write a page table entry");
+         //       printf(" in the TLB set to %d (nsec).\n", TLBtime);
+         //    }
+         //    // time needed to read/write a page to/from disk specified
+         // } else if (strncmp(argv[i],"DISKtime=", 9)==0 ) {
+         //    int value;
+         //    value = atoi(argv[i]+9);
+         //    if ( value<1 || value>MAXTIME ) {
+         //       printf("usage: DISKtime={1-%d} (nsec)\n", MAXTIME);
+         //    } else {
+         //       DISKtime = value*1000;
+         //       printf("Time needed to read/write a page to/from disk");
+         //       printf(" set to %d (msec).\n", DISKtime);
+         //    }
+         // // Page replacement algorithm specified
+         // } else if (strncmp(argv[i],"PR=",3)==0) {
+         //    int value;
+         //    value = atoi(argv[i]+3);
+         //    if ( value<1 || value>3 ) {
+         //       printf("usage: PageRep={1=FIFO, 2=LRU, 3=MFU}\n");
+         //    } else {
+         //       pageReplAlgo = value;
+         //       printf("Page Replacement set to %d.\n", pageReplAlgo);
+         //    }
+         // // Page table type specified
+         // } else if (strncmp(argv[i],"PT=",3)==0) {
+         //    int value;
+         //    value = atoi(argv[i]+3);
+         //    if ( value<1 || value>3 ) {
+         //       printf("usage: PT={1=Single level, 2=Directory, 3=Inverted}\n");
+         //    } else {
+         //       pageTableType = value;
+         //       printf("Page Table type set to %d.\n", pageTableType);
+         //    }
+         // // Working Set Window specified
+         // } else if (strncmp(argv[i],"WSW=",4)==0) {
+         //    int value;
+         //    value = atoi(argv[i]+4);
+         //    if ( value<1 || value>MAXWSW ) {
+         //       printf("usage: WSW={1-%d}\n", MAXWSW);
+         //    } else {
+         //       pageTableType = value;
+         //       printf("Working Set Window set to %d.\n", pageTableType);
+         //    }
          // incorrect flag
          } else {
-               printf( "usage: %s -verbose || -v  ||\n" , argv[0]);
-               printf("\t   -veryverbose || -vv ||\n");
-               printf("\t      -showcmds || -s  ||\n");
-               printf("\tpages = {number of pages available}\n");
-               printf("\tTLB = {number of PTE's available to TLB}\n");
-               printf("\tMMtime = {time needed to read/write a main memory page}\n");
-               printf("\tTLBtime = {time needed to read/write a page table entry in the TLB}\n");
-               printf("\tDISKtime = {time needed to read/write a page to/from disk}\n");
-               printf("\tPR = {1=FIFO, 2=LRU, 3=MFU}\n");
-               printf("\tPT = {1=Single level, 2=Directory, 3=Inverted}\n");
-               printf("\tWSW = {number of instructions in the working set window}\n\n");
+            printf( "usage: %s -verbose || -v  ||\n" , argv[0]);
+            printf("\t   -veryverbose || -vv ||\n");
+            printf("\t      -showcmds || -s  ||\n");
+            printf("\tfile={name of input file}\n");
+            printf("\tparamFile={name of param file}\n");
+            // printf("\tpages={number of pages available}\n");
+            // printf("\tTLB={number of PTE's available to TLB}\n");
+            // printf("\tMMtime={time needed to read/write a main memory page}\n");
+            // printf("\tTLBtime={time needed to read/write a page table entry in the TLB}\n");
+            // printf("\tDISKtime={time needed to read/write a page to/from disk}\n");
+            // printf("\tPR={1=FIFO, 2=LRU, 3=MFU}\n");
+            // printf("\tPT={1=Single level, 2=Directory, 3=Inverted}\n");
+            // printf("\tWSW={number of instructions in the working set window}\n\n");
          }
       }
    }
@@ -697,13 +693,19 @@ int evictOwnPage(void){
    return retVal;
 }
 
-void loadParams(void){
+void loadParams(char *paramFileName){
    FILE *paramFP;
 
-   paramFP = fopen("params.txt", "r");
-   printf("Parameter file loaded: params.txt\n");
+   paramFP = fopen(paramFileName, "r");
+   printf("Parameter file loaded: %s\n", paramFileName);
    if (paramFP == NULL) {
-      printf("Can't open parameter file: params.txt");
+      printf("Can't open parameter file: %s\n", paramFileName);
+      paramFP = fopen("params.txt", "r");
+      printf("Loading default parameter file: params.txt\n");
+      if (paramFP == NULL) {
+         printf("Can't open parameter file: params.txt\n");
+         printf("Using default parameters.\n");
+      }
    }
 
    char paramName[22];
