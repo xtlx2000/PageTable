@@ -696,3 +696,119 @@ int evictOwnPage(void){
 
    return retVal;
 }
+
+void loadParams(void){
+   FILE *paramFP;
+
+   paramFP = fopen("params.txt", "r");
+   printf("Parameter file loaded: params.txt\n");
+   if (paramFP == NULL) {
+      printf("Can't open parameter file: params.txt");
+   }
+
+   char paramName[22];
+   int paramNum;
+   int cnt = 0;
+   const char paramNameList[12][22] = {"maxPages", "TLBEntries", "MMtime", "TLBtime", "DISKtime",
+      "pageReplAlgo", "cacheReplAlgo", "pageTablePageReplAlgo", "pageTableType",
+      "WSW", "numFrames", "numPageTablePages"};
+
+   int paramNumList[12];
+
+   while( fscanf(paramFP, "%s %d %*[^\n]", paramName, &paramNum) != EOF) {
+      if (!strcmp(paramName, paramNameList[cnt])){
+         printf("%21s:\t%d\n", paramName, paramNum);
+         paramNumList[cnt]= paramNum;
+      }
+      cnt++;
+   }
+   if ( paramFP != NULL) { fclose(paramFP);printf("Parameter file closed.\n\n");}
+
+      // max number of pages
+      if ( paramNumList[0]<1 || paramNumList[0]>PTES ) {
+         printf("usage: Pages={1-%d}\n", (int)PTES);
+      } else {
+         maxPages = paramNumList[0];
+         printf("Number of pages set to %d.\n", maxPages);
+      }
+      // Max Number of TLB page table entries specified
+      if ( paramNumList[1]<1 || paramNumList[1]>MAXTLB ) {
+         printf("usage: TLB={1-%d}\n", (int)MAXTLB);
+      } else {
+         TLBEntries = paramNumList[1]; 
+         printf("Max number of TLB entries set to %d.\n", TLBEntries);
+      }
+      // time needed to read and write main memory specified
+      if ( paramNumList[2]<1 || paramNumList[2]>MAXTIME ) {
+         printf("usage: MMtime={1-%d} (nsec)\n", MAXTIME);
+      } else {
+         MMtime = paramNumList[2];
+         printf("Time needed to read/write a main memory");
+         printf("page set to %d (nsec).\n", MMtime);
+      }
+      // time needed to read/write a page table entry in the TLB specified 
+      if ( paramNumList[3]<1 || paramNumList[3]>MAXTIME ) {
+         printf("usage: TLBtime={1-%d} (nsec)\n", MAXTIME);
+      } else {
+         TLBtime = paramNumList[3];
+         printf("Time needed to read/write a page table entry");
+         printf(" in the TLB set to %d (nsec).\n", TLBtime);
+      }
+      // time needed to read/write a page to/from disk specified
+      if ( paramNumList[4]<1 || paramNumList[4]>MAXTIME ) {
+         printf("usage: DISKtime={1-%d} (msec)\n", MAXTIME);
+      } else {
+         DISKtime = paramNumList[4]*1000;
+         printf("Time needed to read/write a page to/from disk");
+         printf(" set to %d (msec).\n", DISKtime/1000);
+      }
+      // Page replacement algorithm specified
+      if ( paramNumList[5]<0 || paramNumList[5]>2 ) {
+         printf("usage: PageRep={0=FIFO, 1=LRU, 2=MFU}\n");
+      } else {
+         pageReplAlgo = paramNumList[5];
+         printf("Page Replacement set to %d.\n", pageReplAlgo);
+      }
+      // Cache replacement algorithm specified
+      if ( paramNumList[6]<0 || paramNumList[6]>2 ) {
+         printf("usage: CacheRepl={0=FIFO, 1=LRU, 2=MFU}\n");
+      } else {
+         cacheReplAlgo = paramNumList[6];
+         printf("Cache Replacement set to %d.\n", pageReplAlgo);
+      }
+      // Page Table replacement algorithm specified
+      if ( paramNumList[7]<0 || paramNumList[7]>2 ) {
+         printf("usage: PageTablePageRepl={0=FIFO, 1=LRU, 2=MFU}\n");
+      } else {
+         pageTablePageReplAlgo = paramNumList[7];
+         printf("Page Talbe Page Replacement set to %d.\n", pageReplAlgo);
+      }
+      // Page table type specified
+      if ( paramNumList[8]<0 || paramNumList[8]>2 ) {
+         printf("usage: PT={0=Single level, 1=Directory, 2=Inverted}\n");
+      } else {
+         pageTableType = paramNumList[8];
+         printf("Page Table type set to %d.\n", pageTableType);
+      }
+      // Working Set Window specified
+      if ( paramNumList[9]<1 || paramNumList[9]>MAXWSW ) {
+         printf("usage: WSW={1-%d}\n", MAXWSW);
+      } else {
+         WSW = paramNumList[9];
+         printf("Working Set Window set to %d.\n", WSW);
+      }
+      // Number of Frames specified
+      if ( paramNumList[10]<1 || paramNumList[10]>PTES ) {
+         printf("usage: numFrames={1-%d}\n", (int)PTES);
+      } else {
+         numFrames = paramNumList[10];
+         printf("Number of frames set to %d.\n", numFrames);
+      }
+      // Number of Page Table Pages specified
+      if ( paramNumList[11]<1 || paramNumList[11]>MAXPTP ) {
+         printf("usage:numPageTablePages={1-%d}\n", MAXPTP);
+      } else {
+         numPageTablePages = paramNumList[11];
+         printf("Working Set Window set to %d.\n", pageTableType);
+      }
+}

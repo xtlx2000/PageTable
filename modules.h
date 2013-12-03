@@ -11,11 +11,11 @@
 #define MAXTLB PTES/2
 #define MAXTIME 9999999
 #define MAXWSW 10
-#define WSW 5
 #define NUMPROCESSES 5
 #define INITWS 5
 #define MINPAGEFAULT 2
 #define MAXPAGEFAULT 10
+#define MAXPTP 30
 
 FILE *fp; //input file pointer
 
@@ -38,10 +38,10 @@ int pageTablePageReplAlgo = 0;
 int pageTableType = 0;
 
 
-//const int WSW = 5;
+int WSW = 5;
 
-const int numFrames = 20;//PTES; TODO: ideally it would be this value
-const int numPageTablePages = 20;//this is the number of page table pages we can store in memory at once
+int numFrames = 20;//PTES; TODO: ideally it would be this value
+int numPageTablePages = 20;//this is the number of page table pages we can store in memory at once
 
 int FIFOindex_page = 0;
 int FIFOindex_page_table_page = 0;
@@ -90,7 +90,7 @@ struct perforamance{
 struct workingSets{
 	int availWorkingSet;	// number of pages available to this process
 	int curWorkingSet;		// number of actual pages in the working set, could be less than WS
-	int pageFaults[WSW];	// maintains page faults for the last WSW instructions
+	int pageFaults[MAXWSW];	// maintains page faults for the last WSW instructions
 	int pageFaultCursor;	// maintains position in the page fault array
 };
 

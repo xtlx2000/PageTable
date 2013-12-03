@@ -109,4 +109,6 @@ int main ( int argc, char* argv[]) {
    //close the file
    if ( fp != NULL) { fclose(fp);printf("File closed.\n\n");}
 
+   loadParams();
+
 }//main
