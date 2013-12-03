@@ -316,11 +316,16 @@ int checkDirtyPTE(struct frame *thisFrame){
 //given an address, this function will find the page that is associated with that address
 int grabPTE(int address){
 	int idx;
-	for(idx=0; idx<PTES; idx++){
-		if((idx+1)*4096 > address){
-			return (idx)*4096;
-		}
-	}
+   switch(pageTableType){
+      case 0: //single level
+      	for(idx=0; idx<PTES; idx++){
+      		if((idx+1)*4096 > address){
+      			return (idx)*4096;
+      		}
+      	}
+      break;
+      case 1:
+   }
 	return -1; //indicates if the it could not find a page
 }//grabPage
 
