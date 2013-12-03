@@ -1,0 +1,12 @@
+maxPages 				500 	// this is maximum number of pages
+TLBEntries 				10  	//
+MMtime 					2		// (nsec)
+TLBtime					1       // (nsec)
+DISKtime				1 		// (msec)
+pageReplAlgo 			0		// 0 - FIFO; 1 - LRU; 2 - MFU
+cacheReplAlgo			0	    //
+pageTablePageReplAlgo 	0	    //
+pageTableType			0 	    // 0 - single; 1 - double; 2 - inverted
+WSW						5	    //
+numFrames				20	   	//
+numPageTablePages		20		//
