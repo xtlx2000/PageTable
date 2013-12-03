@@ -809,6 +809,6 @@ void loadParams(void){
          printf("usage:numPageTablePages={1-%d}\n", MAXPTP);
       } else {
          numPageTablePages = paramNumList[11];
-         printf("Working Set Window set to %d.\n", pageTableType);
+         printf("Number of Page Table Pages set to %d.\n", numPageTablePages);
       }
 }
