@@ -76,6 +76,7 @@ struct TLBEntry{
 
 struct data{
 	int processId;			//id for the current process
+	int previousProcessId;	//id of the previous process
 	uint currentAddress;	//the address that belongs in that line
 	int currentOperation;	//the operation to perform on the currentAddress
 } line;
@@ -104,6 +105,8 @@ struct workingSets processWorkingSets[NUMPROCESSES]; // TODO
 void initialization(void);
 void getParams( int argc, char* argv[]);
 void loadParams(char *paramFileName);
+void flushPageTable(void);
+void flushCache(void);
 
 int readNextLine(int redo);
 void doOp(int operation, int pAddress, int time, int vAddress);

@@ -10,31 +10,12 @@ void initialization(void){
 
    
    //init our empty page table
-   int idx;
-   int i;
-	for(idx = 0; idx<numFrames; idx++){
-		struct frame thisFrame;
-
-      thisFrame.vAddress      = -1;
-      thisFrame.pAddress      = idx*4096;
-		thisFrame.dirtyBit		= 0;
-		thisFrame.referenceBit 	= 0;
-      thisFrame.processId     = -1;
-
-		pageTable[idx] 		= thisFrame;
-	}
+   flushPageTable();
 
    //init TLB
-   for(idx = 0; idx<TLBEntries; idx++){
-      struct TLBEntry thisTLB;
-
-      thisTLB.vAddress = -1;
-      thisTLB.pAddress = -1;
-      thisTLB.frameNum = -1;
-      thisTLB.dirtyBit =  0;
-      TLB[idx] = thisTLB;
-   }
+   flushCache();
    
+   int idx;
    switch(pageTableType){
       case 0: //single
          break;
@@ -53,9 +34,10 @@ void initialization(void){
      }
 
    // init working sets 
-   for(idx = 0; idx< NUMPROCESSES; idx++ ) {
+   for(idx = 0; idx< NUMPROCESSES; idx++ )
       initWorkingSet(&processWorkingSets[idx]);
-   }
+
+   line.processId = -1;
 }//initilization
 
 //execute the operation on the memory location; return 
@@ -211,7 +193,7 @@ void pageTablePageFault(int pageTablePageRequested){
 int grabPTP(int pageRequested){
    int idx;
    for(idx=0; idx<PTES; idx++){
-      if((idx+1)*4096 > pageRequested){
+      if((idx+1)*4096*1024 > pageRequested){
          return idx;
       }
    }
@@ -400,15 +382,53 @@ int readNextLine(int redo){
 //update the gloabl struct line, so that it contains the next line's attributes
 void grabNextLine(int PID, char RW, uint addr){
    program.runNumber++;
-	line.processId		= PID;
-	line.currentAddress = addr;
+   line.previousProcessId = line.processId;
+	line.processId		     = PID;
+	line.currentAddress    = addr;
 	if(RW == 'W'){
 		line.currentOperation = 1;
    } else {
       line.currentOperation = 0;
    }
+
+   //if there was a process switch, we need to flush the cache entries and flush all the pages from the frames
+   //this is because our simulation does not distinguish between two virtual address from different processes
+   if(line.previousProcessId != line.processId){
+      flushCache();
+      flushPageTable();
+   }
 	return;
 }//grabNextLine
+
+//remove all TLB entries from the TLB
+void flushCache(void){
+   int idx;
+   for(idx=0; idx<TLBEntries; idx++){
+      struct TLBEntry thisTLB;
+
+      thisTLB.vAddress = -1;
+      thisTLB.pAddress = -1;
+      thisTLB.frameNum = -1;
+      thisTLB.dirtyBit =  0;
+      TLB[idx] = thisTLB;
+   }
+}//flushCache
+
+//remove all frames from the the page table array
+void flushPageTable(void){
+   int idx;
+   for(idx=0; idx<numFrames; idx++){
+      struct frame thisFrame;
+
+      thisFrame.vAddress      = -1;
+      thisFrame.pAddress      = idx*4096;
+      thisFrame.dirtyBit      = 0;
+      thisFrame.referenceBit  = 0;
+      thisFrame.processId     = -1;
+
+      pageTable[idx]       = thisFrame;
+   }
+}//flushPageTable
 
 //write a dirty page to the disk; it needs to be updated
 void writeToDisk(struct frame evictedFrame){
