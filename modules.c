@@ -325,6 +325,20 @@ int grabPTE(int address){
       	}
       break;
       case 1:
+         // multi-level, do nothing. Handled elsewhere.
+      break;
+      case 2:
+         hashTable[ ((PID+1) * address) % modNum ]++; 
+         if (hashTable[ ((PID+1) * address) % modNum ] > 1) {
+            printf("There has been a collision.\n");
+            doOp(1,-1,hashTable[((PID+1)*address)%modNum]*collisionPercentage,-1);
+         }
+         for(idx=0; idx<PTES; idx++){
+            if((idx+1)*4096 > address){
+               return (idx)*4096;
+            }
+         }
+      break;
    }
 	return -1; //indicates if the it could not find a page
 }//grabPage
@@ -738,7 +752,7 @@ void loadParams(char *paramFileName){
    int cnt = 0;
    const char paramNameList[12][22] = {"maxPages", "TLBEntries", "MMtime", "TLBtime", "DISKtime",
       "pageReplAlgo", "cacheReplAlgo", "pageTablePageReplAlgo", "pageTableType",
-      "WSW", "numFrames", "numPageTablePages"};
+      "WSW", "numFrames", "numPageTablePages"}; // TODO add collisionPercentage and modNum
 
    int paramNumList[12];
 

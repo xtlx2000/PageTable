@@ -26,6 +26,10 @@ int MMtime = 2;
 int TLBtime = 1;
 int DISKtime = 1000;
 
+// inverted page table parameters 
+int modNum = 500;
+int collisionPercentage = .02;
+
 //selects the parameter for which kind of replacement algo to used
 //TODO: fill your replacement type here
 //	0 - FIFO; 1 - LRU; 2 - MFU
@@ -99,7 +103,8 @@ struct workingSets{
 struct TLBEntry TLB[MAXTLB];
 struct frame pageTable[20]; //TODO: these values need to be changed to their correct parameters
 struct pageTablePage pageDirectory[20];
-struct workingSets processWorkingSets[NUMPROCESSES]; // TODO
+struct workingSets processWorkingSets[NUMPROCESSES];
+int hashTable[500]; // should be modNum
 
 //function declarations
 void initialization(void);
