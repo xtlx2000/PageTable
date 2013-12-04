@@ -2,7 +2,7 @@
 Enormous library of functions that help to modularize this program
 */
 
-#include "modules.h"
+#include "pager.h"
 #include "student_func.c"
 #include "interface.c"
 

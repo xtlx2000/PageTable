@@ -8,7 +8,7 @@ or for interacting with the input file given for the simulation
 //used to init all global variables from parameters and malloc space for the data structures
 void initialization(void){
    //malloc space for our datastructures
-   mainMemory     = malloc(sizeof(struct frame)*numFrames);
+   mainMemory        = malloc(sizeof(struct frame)*numFrames);
    program.runNumber = 0;
 
    //init our empty page table
@@ -39,17 +39,8 @@ void initialization(void){
    for(idx = 0; idx< NUMPROCESSES; idx++ )
       initWorkingSet(&processWorkingSets[idx]);
 
+   //init the first line
    line.processId = -1;
-   int i;
-/*   for(i=0; i<numFrames; i++){
-      printf("accessing mainMemory[%d]: %d\n", i, mainMemory[i]);
-   }
-   for(i=0; i<numPageTablePages; i++){
-      printf("accessing pageDirectory[%d]: %d\n", i, pageDirectory[i]);
-   }
-   for(i=0; i<modNum; i++){
-      printf("accessing hashTable[%d]: %d\n", i, hashTable[i]);
-   }*/
 }//initilization
 
 //move the control flow back to the main loop and read the next line
