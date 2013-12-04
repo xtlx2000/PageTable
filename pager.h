@@ -44,9 +44,9 @@ int pageTablePageReplAlgo 	= 0;
 int pageTableType = 0;
 
 //times used for the page table delays
-int singleLevelTime 	= 2;
-int modNum 				= 500;				
-int collisionPercentage = .02;
+int singleLevelPercentage 	= .02;
+int modNum 					= 500;				
+int collisionPercentage 	= .02;
 
 //used to regulate the working set window
 int WSW = 5;
@@ -114,9 +114,6 @@ struct TLBEntry 		TLB[MAXTLB];
 struct workingSets 		processWorkingSets[NUMPROCESSES];
 
 //conditional arrays based on which page table type
-/*struct frame 			mainMemory[20]; 
-int 					hashTable[500]; 
-struct pageTablePage 	pageDirectory[20];*/
 struct frame 			*mainMemory; 
 int 					*hashTable; 
 struct pageTablePage 	*pageDirectory;

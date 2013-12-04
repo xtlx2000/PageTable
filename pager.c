@@ -18,8 +18,6 @@
 #include <math.h>
 #include "modules.c"
 
-
-
 int main ( int argc, char* argv[]) {
    printf("Starting getParams\n");
    getParams(argc, argv);

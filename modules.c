@@ -152,8 +152,8 @@ int grabPTE(int address){
    switch(pageTableType){
       case 0:  //single level: just add some time that it would 
                //              take to make it through the PTEs  
-
-         doOp(1, -1, singleLevelTime, -1); 
+         if(ret > -1)
+            doOp(1, -1, singleLevelPercentage * ret, -1); 
          break;
       case 1:  //multi-level: check if the page table page 
                //             you need is in memory before 
