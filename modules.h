@@ -20,64 +20,72 @@ FILE *fp; //input file pointer
 char *paramFileName;
 
 // global param variables and defaults
-int maxPages = 500;
-int TLBEntries = 10;
-int MMtime = 2;
-int TLBtime = 1;
-int DISKtime = 1000;
+int maxPages 	= 500;
+int TLBEntries 	= 10;
+int MMtime 		= 2;
+int TLBtime 	= 1;
+int DISKtime 	= 1000;
+int v 			= 0;
 
-// inverted page table parameters 
-int modNum = 500;
-int collisionPercentage = .02;
+//used to tell our main loop if we have page faulted;
+//if we have reread the line and do not go to the next line
+int redo = 0;
+int numPageFaults = 0;
+int pageRequested;
 
 //selects the parameter for which kind of replacement algo to used
-//TODO: fill your replacement type here
 //	0 - FIFO; 1 - LRU; 2 - MFU
-int pageReplAlgo = 0;
-int cacheReplAlgo = 0;
-int pageTablePageReplAlgo = 0;
+int pageReplAlgo 			= 0;
+int cacheReplAlgo 			= 0;
+int pageTablePageReplAlgo 	= 0;
 
 //selects the parameter for which kind of page table we want
-//	0 - single; 1 - double; 2 - inverted
+//	0 - single; 1 - multi; 2 - inverted
 int pageTableType = 0;
 
+//times used for the page table delays
+int singleLevelTime 	= 2;
+int modNum 				= 500;				
+int collisionPercentage = .02;
 
+//used to regulate the working set window
 int WSW = 5;
 
-int numFrames = 20;//PTES; TODO: ideally it would be this value
-int numPageTablePages = 20;//this is the number of page table pages we can store in memory at once
+//used to regulate how many frames or page table pages we want to allow our computer to have in memory at one time
+int numFrames 			= 20;//PTES; TODO: ideally it would be this value
+int numPageTablePages 	= 20;//this is the number of page table pages we can store in memory at once
 
+//EXAMPLE: used to control our FIFO indexes; tells us which one to evict next
 int FIFOindex_page = 0;
 int FIFOindex_page_table_page = 0;
 int FIFOindex_cache = 0;
 
-int PID; // to be replaced by line struct
-char RW;
-uint addr;
 
-int v = 0; // Verbosity
-
+//represents frames in memory; if vAddress is -1, then the frame is empty
 struct frame{
 	int vAddress;			//the virtual address that goes with this page
 	int pAddress;			//the physical address that goes with this page
 	int dirtyBit;			//is the frame dirty?
 	int referenceBit;		//has the frame been referenced?
 	int processId;			//id for the process owning this page
-};
+};//frame
 
+//represents a section of our total page table in the case you want to use a multi-level page table
 struct pageTablePage{
 	int idx;				//which page table partition is it?
 	int startAddress;
 	int dirtyBit;
-};
+};//pageTablePage
 
+//used to represent a TLB entry; if vAddress is -1, then the entry is empty
 struct TLBEntry{
 	int vAddress;			//used to find if the address from the line is in the TLB
 	int pAddress;			//the translated virtual address
 	int frameNum;			//page table index of this page
 	int dirtyBit;
-};
+};//TLBEntry
 
+//used to represent the data grabbed from the current line
 struct data{
 	int processId;			//id for the current process
 	int previousProcessId;	//id of the previous process
@@ -85,32 +93,40 @@ struct data{
 	int currentOperation;	//the operation to perform on the currentAddress
 } line;
 
+//used to do running performance of however many lines we have read
 struct perforamance{
 	float runningAverage;	//keep a running average of the total access time for each instruction
 	int currentRunningSum; 	//accumulated time for the current run 
 	int runNumber;			//the number of lines that you have read
-	int totalPageFaults;	// Joe: I think this would be a good performance metric to add 
+	int totalPageFaults;	//the total number of page faults
 } program;
 
+//used to regulate our working set window depending on the number of page faults we have encountered
 struct workingSets{
 	int availWorkingSet;	// number of pages available to this process
 	int curWorkingSet;		// number of actual pages in the working set, could be less than WS
 	int pageFaults[MAXWSW];	// maintains page faults for the last WSW instructions
 	int pageFaultCursor;	// maintains position in the page fault array
-};
+};//workingSets
 
-//globals
-struct TLBEntry TLB[MAXTLB];
-struct frame pageTable[20]; //TODO: these values need to be changed to their correct parameters
-struct pageTablePage pageDirectory[20];
-struct workingSets processWorkingSets[NUMPROCESSES];
-int hashTable[500]; // should be modNum
+//globals; we will always need these
+struct TLBEntry 		TLB[MAXTLB];
+struct workingSets 		processWorkingSets[NUMPROCESSES];
+
+//conditional arrays based on which page table type
+/*struct frame 			mainMemory[20]; 
+int 					hashTable[500]; 
+struct pageTablePage 	pageDirectory[20];*/
+struct frame 			*mainMemory; 
+int 					*hashTable; 
+struct pageTablePage 	*pageDirectory;
+ 
 
 //function declarations
 void initialization(void);
 void getParams( int argc, char* argv[]);
 void loadParams(char *paramFileName);
-void flushPageTable(void);
+void flushMainMemory(void);
 void flushCache(void);
 
 int readNextLine(int redo);
@@ -131,17 +147,12 @@ int evictPageTablePage(void);
 void updatePageDirectory(int idx, int pageTablePageRequested);
 
 int grabPTE(int address);
-int checkPageTable(int pageRequested);
-int checkPageTableEntry(int pageRequested);
+int checkMainMemory(int pageRequested);
+int checkMainMemoryEntry(int pageRequested);
 void pageFault(int pageRequested);
 int checkForFreeFrame(void);
 int evictPage(void);
-int checkDirtyPTE(struct frame *thisFrame);
-void updatePageTable(struct frame *thisFrame, int pageRequested);
-
-void writeToDisk(struct frame evictedFrame);
-void readFromDisk(struct frame *thisFrame);
-int checkDiskFound(int address);
+void updateMainMemory(struct frame *thisFrame, int pageRequested);
 
 void initWorkingSet(struct workingSets *thisWorkingSet);
 int markWSPage(struct workingSets *thisWorkingSet, int fault);
@@ -149,3 +160,5 @@ int calcWSPageFaults(struct workingSets *thisWorkingSet);
 int evictOwnPage(void);
 
 void visual(void);
+void openInputFile(void);
+void run(void);
