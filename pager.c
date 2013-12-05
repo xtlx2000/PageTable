@@ -3,11 +3,10 @@
 //
 // Date created: 11/18/2013
 //
-// Last Modified: 11/20/2013
+// Last Modified: 12/4/2013
 //
 // Description: 
 //    Simulation to be used as a demonstration to show how paging works. 
-// Some interesting notes:
 //    
 //
 // Acknowledgements: 
@@ -19,10 +18,9 @@
 #include "modules.c"
 
 int main ( int argc, char* argv[]) {
-   printf("Starting getParams\n");
    getParams(argc, argv);
-   printf("Starting loadParams\n");
-   loadParams(paramFileName);
+   if (paramFileName)
+      loadParams(paramFileName);
 
    //initialize all our arrays
    initialization();
@@ -37,7 +35,8 @@ int main ( int argc, char* argv[]) {
 
    //print average access time
    printf("\n%s %f %s\n", "Average Access Time: ", program.runningAverage, "ns");
-   printf("%s %d %s\n", "Total Access Time: ", program.currentRunningSum, "ns");
+   printf("%s %f %s\n", "Total Access Time: ", (float) program.currentRunningSum/1000000000, "s");
+   printf("%s %d\n", "Total Page Faults:", program.totalPageFaults);
 
    //close the file
    if ( fp != NULL) { fclose(fp);printf("File closed.\n\n");}

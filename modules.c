@@ -246,6 +246,7 @@ void flushMainMemory(void){
 
       mainMemory[idx]       = thisFrame;
    }
+   //processWorkingSets[line.previousProcessId].curWorkingSet=0;
 }//flushmainMemory
 
 //trigger the sequence of events that occur during a page fault
@@ -263,11 +264,17 @@ void pageFault(int pageRequested){
          if(v)
             puts("PAGE EVICTION");
 		   idx = evictPage();
-
       }
 	} 
    //2.) bring the page into the page table
 	updateMainMemory(&mainMemory[idx], pageRequested);
+
+   //3.) if Multilevel page table, dirty the page table page
+   if ( pageTableType ==  1)
+      pageDirectory[pageRequested/(4096*1024)].dirtyBit == 1;
+
+   //4.) update total page faults
+   program.totalPageFaults++;
 }//pageFault
 
 //bring the page into the page table for future use
@@ -285,7 +292,7 @@ void updateMainMemory(struct frame *thisFrame, int pageRequested){
 
 void initWorkingSet(struct workingSets *thisWorkingSet){
    int i;
-   thisWorkingSet-> availWorkingSet = INITWS;
+   thisWorkingSet-> availWorkingSet = initWS;
    thisWorkingSet-> curWorkingSet = 0;
    thisWorkingSet-> pageFaultCursor = 0;
    for (i= 0; i< WSW; i++ )

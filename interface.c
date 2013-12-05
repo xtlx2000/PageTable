@@ -78,7 +78,7 @@ void grabNextLine(int PID, char RW, uint addr){
    //this is because our simulation does not distinguish between two virtual address from different processes
    if(line.previousProcessId != line.processId){
       flushCache();
-      flushMainMemory();
+      //flushMainMemory();
    }
    return;
 }//grabNextLine
@@ -107,108 +107,11 @@ void getParams( int argc, char* argv[]){
          } else if (strcmp(argv[i],"-verbose")==0 || strcmp(argv[i],"-v")==0) {
             printf("Verbose option engaged.\n");
             v = 1;
-         // Very verbose option 
-         } else if (strcmp(argv[i],"-veryverbose")==0 || strcmp(argv[i],"-vv")==0) {
-            printf("Very Verbose option engaged.\n");
-            v = 2;
-         // // Number of pages specified
-         // } else if (strncmp(argv[i],"Pages=", 6)==0 ) {
-         //    int value;
-         //    value = atoi(argv[i]+6);
-         //    if ( value<1 || value>PTES ) {
-         //       printf("usage: Pages={1-%d}\n", (int)PTES);
-         //    } else {
-         //       maxPages = value;
-         //       printf("Number of pages set to %d.\n", maxPages);
-         //    }
-         // // Max Number of TLB page table entries specified
-         // } else if (strncmp(argv[i],"TLB=", 4)==0 ) {
-         //    int value;
-         //    value = atoi(argv[i]+4);
-         //    if ( value<1 || value>MAXTLB ) {
-         //       printf("usage: TLB={1-%d}\n", (int)MAXTLB);
-         //    } else {
-         //       TLBEntries = value; 
-         //       printf("Max number of TLB entries set to %d.\n", TLBEntries);
-         //    }
-         // // time needed to read and write main memory specified
-         // } else if (strncmp(argv[i],"MMtime=", 7)==0 ) {
-         //    int value;
-         //    value = atoi(argv[i]+7);
-         //    if ( value<1 || value>MAXTIME ) {
-         //       printf("usage: MMtime={1-%d} (nsec)\n", MAXTIME);
-         //    } else {
-         //       MMtime = value;
-         //       printf("Time needed to read/write a main memory");
-         //       printf("page set to %d (nsec).\n", value);
-         //    }
-         //    // time needed to read/write a page table entry in the TLB specified 
-         // } else if (strncmp(argv[i],"TLBtime=", 8)==0 ) {
-         //    int value;
-         //    value = atoi(argv[i]+8);
-         //    if ( value<1 || value>MAXTIME ) {
-         //       printf("usage: TLBtime={1-%d} (nsec)\n", MAXTIME);
-         //    } else {
-         //       TLBtime = value;
-         //       printf("Time needed to read/write a page table entry");
-         //       printf(" in the TLB set to %d (nsec).\n", TLBtime);
-         //    }
-         //    // time needed to read/write a page to/from disk specified
-         // } else if (strncmp(argv[i],"DISKtime=", 9)==0 ) {
-         //    int value;
-         //    value = atoi(argv[i]+9);
-         //    if ( value<1 || value>MAXTIME ) {
-         //       printf("usage: DISKtime={1-%d} (nsec)\n", MAXTIME);
-         //    } else {
-         //       DISKtime = value*1000;
-         //       printf("Time needed to read/write a page to/from disk");
-         //       printf(" set to %d (msec).\n", DISKtime);
-         //    }
-         // // Page replacement algorithm specified
-         // } else if (strncmp(argv[i],"PR=",3)==0) {
-         //    int value;
-         //    value = atoi(argv[i]+3);
-         //    if ( value<1 || value>3 ) {
-         //       printf("usage: PageRep={1=FIFO, 2=LRU, 3=MFU}\n");
-         //    } else {
-         //       pageReplAlgo = value;
-         //       printf("Page Replacement set to %d.\n", pageReplAlgo);
-         //    }
-         // // Page table type specified
-         // } else if (strncmp(argv[i],"PT=",3)==0) {
-         //    int value;
-         //    value = atoi(argv[i]+3);
-         //    if ( value<1 || value>3 ) {
-         //       printf("usage: PT={1=Single level, 2=Directory, 3=Inverted}\n");
-         //    } else {
-         //       pageTableType = value;
-         //       printf("Page Table type set to %d.\n", pageTableType);
-         //    }
-         // // Working Set Window specified
-         // } else if (strncmp(argv[i],"WSW=",4)==0) {
-         //    int value;
-         //    value = atoi(argv[i]+4);
-         //    if ( value<1 || value>MAXWSW ) {
-         //       printf("usage: WSW={1-%d}\n", MAXWSW);
-         //    } else {
-         //       pageTableType = value;
-         //       printf("Working Set Window set to %d.\n", pageTableType);
-         //    }
          // incorrect flag
          } else {
             printf( "usage: %s -verbose || -v  ||\n" , argv[0]);
-            printf("\t   -veryverbose || -vv ||\n");
-            printf("\t      -showcmds || -s  ||\n");
             printf("\tfile={name of input file}\n");
             printf("\tparamFile={name of param file}\n");
-            // printf("\tpages={number of pages available}\n");
-            // printf("\tTLB={number of PTE's available to TLB}\n");
-            // printf("\tMMtime={time needed to read/write a main memory page}\n");
-            // printf("\tTLBtime={time needed to read/write a page table entry in the TLB}\n");
-            // printf("\tDISKtime={time needed to read/write a page to/from disk}\n");
-            // printf("\tPR={1=FIFO, 2=LRU, 3=MFU}\n");
-            // printf("\tPT={1=Single level, 2=Directory, 3=Inverted}\n");
-            // printf("\tWSW={number of instructions in the working set window}\n\n");
          }
       }
    }
@@ -255,7 +158,8 @@ void loadParams(char *paramFileName){
    FILE *paramFP;
 
    paramFP = fopen(paramFileName, "r");
-   printf("Parameter file loaded: %s\n", paramFileName);
+   if (v) 
+      printf("Parameter file loaded: %s\n", paramFileName);
    if (paramFP == NULL) {
       printf("Can't open parameter file: %s\n", paramFileName);
       paramFP = fopen("params.txt", "r");
@@ -269,27 +173,29 @@ void loadParams(char *paramFileName){
    char paramName[22];
    int paramNum;
    int cnt = 0;
-   const char paramNameList[12][22] = {"maxPages", "TLBEntries", "MMtime", "TLBtime", "DISKtime",
+   const char paramNameList[17][22] = {"numFrames", "TLBEntries", "MMtime", "TLBtime", "DISKtime",
       "pageReplAlgo", "cacheReplAlgo", "pageTablePageReplAlgo", "pageTableType",
-      "WSW", "numFrames", "numPageTablePages"}; // TODO add collisionPercentage and modNum
+      "WSW", "initWS", "minPageFault", "maxPageFault", "numPageTablePages",
+       "singleLevelPercentage", "collisionPercentage", "modNum" };
 
-   int paramNumList[12];
+   int paramNumList[17];
 
    while( fscanf(paramFP, "%s %d %*[^\n]", paramName, &paramNum) != EOF) {
       if (!strcmp(paramName, paramNameList[cnt])){
-         printf("%21s:\t%d\n", paramName, paramNum);
+         if (v) 
+            printf("%21s:\t%d\n", paramName, paramNum);
          paramNumList[cnt]= paramNum;
       }
       cnt++;
    }
-   if ( paramFP != NULL) { fclose(paramFP);printf("Parameter file closed.\n\n");}
+   if ( paramFP != NULL) { fclose(paramFP);if(v){printf("Parameter file closed.\n\n");}}
 
-      // max number of pages
+      // Number of Frames specified
       if ( paramNumList[0]<1 || paramNumList[0]>PTES ) {
-         printf("usage: Pages={1-%d}\n", (int)PTES);
+         printf("usage: numFrames={1-%d}\n", (int)PTES);
       } else {
-         maxPages = paramNumList[0];
-         printf("Number of pages set to %d.\n", maxPages);
+         numFrames = paramNumList[0];
+         printf("Number of frames set to %d.\n", numFrames);
       }
       // Max Number of TLB page table entries specified
       if ( paramNumList[1]<1 || paramNumList[1]>MAXTLB ) {
@@ -357,19 +263,54 @@ void loadParams(char *paramFileName){
          WSW = paramNumList[9];
          printf("Working Set Window set to %d.\n", WSW);
       }
-      // Number of Frames specified
-      if ( paramNumList[10]<1 || paramNumList[10]>PTES ) {
-         printf("usage: numFrames={1-%d}\n", (int)PTES);
+      // initial Working Set size specified
+      if ( paramNumList[10]<1 || paramNumList[10]>numFrames ) {
+         printf("usage: initWS={1-%d}\n", numFrames);
       } else {
-         numFrames = paramNumList[10];
-         printf("Number of frames set to %d.\n", numFrames);
+         initWS = paramNumList[10];
+         printf("Initial Working Set size set to %d.\n", initWS);
+      }
+      // Minimum number of page faults is WSW specified
+      if ( paramNumList[11]<1 || paramNumList[11]>WSW ) {
+         printf("usage: minPageFault={1-%d}\n", WSW);
+      } else {
+         minPageFault = paramNumList[11];
+         printf("Minimum number of page faults is WSW set to %d.\n", minPageFault);
+      }
+      // Maximum number of page faults is WSW specified
+      if ( paramNumList[12]<1 || paramNumList[12]>WSW ) {
+         printf("usage: maxPageFault={1-%d}\n", WSW);
+      } else {
+         maxPageFault = paramNumList[12];
+         printf("Maximum number of page faults is WSW set to %d.\n", maxPageFault);
       }
       // Number of Page Table Pages specified
-      if ( paramNumList[11]<1 || paramNumList[11]>MAXPTP ) {
+      if ( paramNumList[13]<1 || paramNumList[13]>MAXPTP ) {
          printf("usage:numPageTablePages={1-%d}\n", MAXPTP);
       } else {
-         numPageTablePages = paramNumList[11];
+         numPageTablePages = paramNumList[13];
          printf("Number of Page Table Pages set to %d.\n", numPageTablePages);
+      }
+      // Percentage of index to be added to time
+      if ( paramNumList[14]<0 || paramNumList[14]>100 ) {
+         printf("usage:singleLevelPercentage={0-%d}\n", 100);
+      } else {
+         singleLevelPercentage = (float)(paramNumList[14]/100.0);
+         printf("Percentage of index to be added to time set to %d%%(%.2f).\n", paramNumList[14], singleLevelPercentage);
+      }
+      // Percentage of load factor of a single access to be added to time
+      if ( paramNumList[15]<0 || paramNumList[15]>100 ) {
+         printf("usage:numPageTablePages={0-%d}\n", 100);
+      } else {
+         collisionPercentage = (float)(paramNumList[15]/100.0);
+         printf("Percentage of load factor to add to time set to %d%%(%.2f).\n", paramNumList[15], collisionPercentage);
+      }
+      // Number of Buckets in the inverted page table
+      if ( paramNumList[16]<1 || paramNumList[16]>numFrames ) {
+         printf("usage:modNum={1-%d}\n", numFrames);
+      } else {
+         modNum = paramNumList[16];
+         printf("Number of Buckets in the inverted page table set to %d.\n", modNum);
       }
 }//loadParams
 
@@ -424,7 +365,7 @@ void run(void){
       printf("ERROR: SEG FAULT\n");
 
    if(program.runNumber > WSW){
-      if ( numPageFaults < MINPAGEFAULT ) {
+      if ( numPageFaults < minPageFault ) {
          // remove allocated pages from the working set for that process
          processWorkingSets[line.processId].availWorkingSet--;
          int idx = evictPage();
@@ -435,9 +376,21 @@ void run(void){
          thisFrame->processId    = -1;
       } 
 
-      if ( numPageFaults > MAXPAGEFAULT ) {
+      if ( numPageFaults > maxPageFault ) {
          // add free pages to the working set for that process
          processWorkingSets[line.processId].availWorkingSet++;
       }
    }
+   if (!v)
+      progressBar();
 }//run
+
+void progressBar(void) {
+   if (program.runNumber==1 && redo == 0) {
+      printf("\n0%%|-----------------------__-----------------------|100%%\n");
+      fprintf(stderr,"  ");
+   }
+   if (program.runNumber%(numInputLines/50) == 0 && redo == 0 )
+      //printf("%d", program.runNumber%(numInputLines/50));
+      fprintf(stderr,"#");
+}

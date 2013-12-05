@@ -1,12 +1,17 @@
-maxPages 				500 	// this is maximum number of pages
-TLBEntries 				10  	//
-MMtime 					2		// (nsec)
-TLBtime					1       // (nsec)
-DISKtime				1 		// (msec)
+numFrames				162144	// Number of Frams (1 GB Main Mem)
+TLBEntries 				1024  	// Number of TLB entries (1 MB TLB)
+MMtime 					2		// Read/write to Main Mem(nsec)
+TLBtime					1       // Read/write a TLB entry(nsec)
+DISKtime				1 		// Read/write from/to disk(msec)
 pageReplAlgo 			0		// 0 - FIFO; 1 - LRU; 2 - MFU
-cacheReplAlgo			0	    //
-pageTablePageReplAlgo 	0	    //
+cacheReplAlgo			0	    // 0 - FIFO; 1 - LRU; 2 - MFU
+pageTablePageReplAlgo 	0	    // 0 - FIFO; 1 - LRU; 2 - MFU
 pageTableType			0 	    // 0 - single; 1 - double; 2 - inverted
-WSW						5	    //
-numFrames				20	   	//
-numPageTablePages		20		//
+WSW						10	    // Working Set Window, number of instructions
+initWS					1000	// initial working set
+minPageFault			1  		// minimum number of page faults within the WSW
+maxPageFault			5 		// maximum number of page faults within the WSW
+numPageTablePages		20		// Number of page table pages for multilevel
+singleLevelPercentage 	1		// percentage between 0 and 100 of index into page table
+collisionPercentage 	1		// percentage between 0 and 100 of load factor in a bucket for inverted
+modNum 					50		// Number of buckets in the inverted page table

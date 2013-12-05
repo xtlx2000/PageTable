@@ -9,18 +9,15 @@
 #define PTES ADDRESSPACE/PAGESIZE
 #define MAXTLB PTES/2
 #define MAXTIME 9999999
-#define MAXWSW 10
+#define MAXWSW 1000
 #define NUMPROCESSES 5
-#define INITWS 5
-#define MINPAGEFAULT 2
-#define MAXPAGEFAULT 10
 #define MAXPTP 30
+#define numInputLines 1000000
 
 FILE *fp; //input file pointer
-char *paramFileName;
+char *paramFileName = NULL;
 
 // global param variables and defaults
-int maxPages 	= 500;
 int TLBEntries 	= 10;
 int MMtime 		= 2;
 int TLBtime 	= 1;
@@ -44,12 +41,15 @@ int pageTablePageReplAlgo 	= 0;
 int pageTableType = 0;
 
 //times used for the page table delays
-int singleLevelPercentage 	= .02;
-int modNum 					= 500;				
-int collisionPercentage 	= .02;
+float singleLevelPercentage 	= .02;			
+float collisionPercentage 	= .02;
+int modNum 					= 500;	
 
 //used to regulate the working set window
 int WSW = 5;
+int initWS = 50;
+int minPageFault = 1;
+int maxPageFault = 10;
 
 //used to regulate how many frames or page table pages we want to allow our computer to have in memory at one time
 int numFrames 			= 20;//PTES; TODO: ideally it would be this value
@@ -159,3 +159,4 @@ int evictOwnPage(void);
 void visual(void);
 void openInputFile(void);
 void run(void);
+void progressBar(void);
