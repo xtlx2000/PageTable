@@ -7,13 +7,13 @@ Contents:
 ---------
 
 --Makefile 		:: makes the program
---interface.c 	:: library of functions that controls the programs interface (main loop, print statements, ...)
---modules.c 	:: library of functions that controls the mechanics of the simulation (pageFault, updatePageTable, ...)
+--interface.c 		:: library of functions that controls the programs interface (main loop, print statements, ...)
+--modules.c 		:: library of functions that controls the mechanics of the simulation (pageFault, updatePageTable, ...)
 --pager.h 	 	:: header used to store all global parameters and to initialize all library functionss
 --pager.c 		:: main function; contains the initialization and main loop contents
---params.txt 	:: file used to load in parameters; if no paramets are set, defaults are given (see below)
---student_func.c:: library that the student will need to fill out; it contains the sections where all the eviction policies need to go
---trace.out 	:: input file of reads and writes to memory
+--params.txt 		:: file used to load in parameters; if no paramets are set, defaults are given (see below)
+--student_func.c	:: library that the student will need to fill out; it contains the sections where all the eviction policies need to go
+--trace.out 		:: input file of reads and writes to memory
 
 
 How to Use:
@@ -21,29 +21,34 @@ How to Use:
 
 1.) set the params.txt file to the appropriate simulation you desire
 2.) make
-3.) ./pager -v file=filename.extension (see list of command line parameters)
+3.) ./pager -v file=filename.extension paramFile=filename.extension(see list of command line parameters)
 4.) make clean
 
 Params.txt:
 -----------
 
-maxPages				:: the maximum number of pages you would like your computer to have 				
-TLBEntries 				:: the maximum number of TLB entries you can store in the cache at one time
-MMtime 					:: the time it takes to access main memory (ns)
-TLBtime					:: the time it takes to access cache (ns)
-DISKtime				:: the time it takes to access disk (ns)
+numFrames			:: the maximum number of frames you would like your computer to have
+TLBEntries 			:: the maximum number of TLB entries you can store in the cache at one time
+MMtime 				:: the time it takes to access main memory (ns)
+TLBtime				:: the time it takes to access cache (ns)
+DISKtime			:: the time it takes to access disk (ns)
 pageReplAlgo 			:: the eviction policy used to replace pages from main memory 
 cacheReplAlgo			:: the eviction policy used to replace TLB entries from the cache
 pageTablePageReplAlgo 	:: the eviction policy used to replace page table pages from main memory (multi-level pt only)
 pageTableType			:: the type of page table you would like to simulate
 WSW						:: the size of the working set window
-numFrames				:: the maximum number of frames you would like to allow your computer to store at one time
+initWS					:: inital size of the Working set for each process
+minPageFault			:: minimum number of page faults within the WSW
+maxPageFault			:: maximum number of page faults within the WSW
 numPageTablePages		:: the mamimum number of page table page you would like to allow in memory at one time (multi-level pt only)
+singleLevelPercentage 		:: percentage between 0 and 100 of index into page table
+collisionPercentage 		:: percentage between 0 and 100 of load factor in a bucket for inverted
+modNum 				:: number of buckets in the inverted page table
 
 Command Line:
 -------------
 
--v 			: verbose; show all logs and simulation activity
+-v 		: verbose; show all logs and simulation activity (very slow for 1M lines)
 file=		: pick a file to read as input (that is not trace.out)
 paramFile=	: pick a file to read parameters (that is not params.txt)
 
@@ -51,18 +56,18 @@ Defaults:
 ---------
 
 Without any command line parameters or changes to the params.txt file, the following defaults are chosen:
-maxPages 				500
-TLBEntries 				10
-MMtime 					2 //ns
-TLBtime					1 //ns
-DISKtime				1 //ns
-pageReplAlgo 			0 //FIFO
-cacheReplAlgo			0 //FIFO
+maxPages 		500
+TLBEntries 		10
+MMtime 			2 //ns
+TLBtime			1 //ns
+DISKtime		1 //ns
+pageReplAlgo 		0 //FIFO
+cacheReplAlgo		0 //FIFO
 pageTablePageReplAlgo 	0 //FIFO
-pageTableType			0 //single
-WSW						5
-numFrames				20
-numPageTablePages		20
+pageTableType		0 //single
+WSW			5
+numFrames		20
+numPageTablePages	20
 
 Overview:
 ---------
@@ -90,7 +95,7 @@ The program will follow the following procedure (which can be visually seen in t
 4.) If it's not in the cache or in main memory, we have a page fault
 	4.a) first, look to see if there is a free frame. If there is, use it to add your requested page to main memory (this counts as a disk hit/miss and time will be added)
 	4.b) if there are no free frames, you must evict one using the page replacement algorithm
-		4.b.i) if the frame you chose to evict is dirty, you must write it back to disk, which counts as a disk hit/miss and time will be added
+	4.b.i) if the frame you chose to evict is dirty, you must write it back to disk, which counts as a disk hit/miss and time will be added
 	4.c) then you have to update your memory with your new requested page. This counts as a memory hit/miss and time will be added. 
 	4.d) in the case of a page fault, we want to reread the line so that our operation can perform correctly with its page in memory
 
