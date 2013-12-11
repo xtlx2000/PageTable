@@ -77,7 +77,6 @@ struct frame{
 	int referenceBit;		//has the frame been referenced?
 	int processId;			//id for the process owning this page
 	int historyBit;			//used for certain eviction policies
-	int referenceBit;		//used for certain eviction policies
 };//frame
 
 //represents a section of our total page table in the case you want to use a multi-level page table
