@@ -10,6 +10,8 @@ void initialization(void){
    //malloc space for our datastructures
    mainMemory        = malloc(sizeof(struct frame)*numFrames);
    program.runNumber = 0;
+   program.totalPageFaults = 0;
+   program.totalEvictions = 0;
 
    //init our empty page table
    flushMainMemory();

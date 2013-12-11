@@ -37,6 +37,9 @@ int main ( int argc, char* argv[]) {
    printf("\n%s %f %s\n", "Average Access Time: ", program.runningAverage, "ns");
    printf("%s %f %s\n", "Total Access Time: ", (float) program.currentRunningSum/1000000000, "s");
    printf("%s %d\n", "Total Page Faults:", program.totalPageFaults);
+   printf("%s %d\n", "Total Evictions:", program.totalEvictions);
+   printf("%s %f%s\n", "Percentage of time due to evictions: ",
+          ((float) program.currentEvictionSum/program.currentRunningSum)*100, "%");
 
    //close the file
    if ( fp != NULL) { fclose(fp);printf("File closed.\n\n");}

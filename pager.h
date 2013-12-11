@@ -94,11 +94,13 @@ struct data{
 } line;
 
 //used to do running performance of however many lines we have read
-struct perforamance{
+struct performance{
 	float runningAverage;	//keep a running average of the total access time for each instruction
-	int currentRunningSum; 	//accumulated time for the current run 
+	int currentRunningSum; 	//accumulated time for the current run
+	int currentEvictionSum; //accumulated evcition time for the current run
 	int runNumber;			//the number of lines that you have read
 	int totalPageFaults;	//the total number of page faults
+	int totalEvictions;		//the total number of evictions due to page faults
 } program;
 
 //used to regulate our working set window depending on the number of page faults we have encountered

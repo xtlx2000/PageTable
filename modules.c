@@ -10,6 +10,9 @@ Enormous library of functions that help to modularize this program
 void doOp(int operation, int pAddress, int time, int vAddress){
    if(vAddress > -1 && pAddress > -1)
       updateCache(pAddress, vAddress);
+   else {
+      program.currentEvictionSum+= time;
+   }
 
    program.currentRunningSum += time;
 }//doOP
@@ -255,16 +258,18 @@ void pageFault(int pageRequested){
 	int idx = checkForFreeFrame();
 	if(idx < 0){
 		//1.a) evict someone using the replacement algorithms; check if the page is dirty
+      //       and update number of evictions
       if  (processWorkingSets[line.processId].availWorkingSet ==
          processWorkingSets[line.processId].curWorkingSet) {
          if(v)
             puts("OWN PAGE EVICTION");
-         idx = evictPage();
+         idx = evictOwnPage();
       } else {
          if(v)
             puts("PAGE EVICTION");
 		   idx = evictPage();
       }
+      program.totalEvictions++;
 	} 
    //2.) bring the page into the page table
 	updateMainMemory(&mainMemory[idx], pageRequested);
