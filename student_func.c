@@ -76,6 +76,12 @@ struct TLBEntry{
 	int historyBit;			//used for certain eviction policies
 	int referenceBit;		//used for certain eviction policies
 };//TLBEntry
+
+Any other structure or variables should go up here and should work as long as you use them correctly
+in the code provided below
+
+/////YOUR HOMEMADE FUNCTION/STRUCTURES/VARIABLES/////
+TODO:
 */
 
 ////////////////////////////
