@@ -31,7 +31,7 @@ int numPageFaults = 0;
 int pageRequested;
 
 //selects the parameter for which kind of replacement algo to used
-//	0 - FIFO; 1 - LRU; 2 - MFU
+//	0 - FIFO; 1 - LRU; 2 - MRU
 int pageReplAlgo 			= 0;
 int cacheReplAlgo 			= 0;
 int pageTablePageReplAlgo 	= 0;
@@ -60,6 +60,14 @@ int FIFOindex_page = 0;
 int FIFOindex_page_table_page = 0;
 int FIFOindex_cache = 0;
 
+int LRUindex_page = 0;
+int LRUindex_page_table_page = 0;
+int LRUindex_cache = 0;
+
+int MRUindex_page = 0;
+int MRUindex_page_table_page = 0;
+int MRUindex_cache = 0;
+
 
 //represents frames in memory; if vAddress is -1, then the frame is empty
 struct frame{
@@ -68,13 +76,17 @@ struct frame{
 	int dirtyBit;			//is the frame dirty?
 	int referenceBit;		//has the frame been referenced?
 	int processId;			//id for the process owning this page
+	int historyBit;			//used for certain eviction policies
+	int referenceBit;		//used for certain eviction policies
 };//frame
 
 //represents a section of our total page table in the case you want to use a multi-level page table
 struct pageTablePage{
 	int idx;				//which page table partition is it?
-	int startAddress;
-	int dirtyBit;
+	int startAddress;		//address that this page table page starts at
+	int dirtyBit;			//is this page table page dirty?
+	int historyBit;			//used for certain eviction policies
+	int referenceBit;		//used for certain eviction policies
 };//pageTablePage
 
 //used to represent a TLB entry; if vAddress is -1, then the entry is empty
@@ -82,7 +94,9 @@ struct TLBEntry{
 	int vAddress;			//used to find if the address from the line is in the TLB
 	int pAddress;			//the translated virtual address
 	int frameNum;			//page table index of this page
-	int dirtyBit;
+	int dirtyBit;			//is this cache entry dirty?
+	int historyBit;			//used for certain eviction policies
+	int referenceBit;		//used for certain eviction policies
 };//TLBEntry
 
 //used to represent the data grabbed from the current line
